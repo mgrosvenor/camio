@@ -1,0 +1,9 @@
+#! /bin/bash
+find . -type d | grep -v "\.$" | grep -v ".\/include" | grep -v "\/bin" | grep -v "/\.git" | grep -v ".\/dag" | grep -v ".\/netmap" | grep -v "build" > .tmp.dirs
+find . | grep ".*.h$" | grep -v ".\/include" | grep -v "\/bin" | grep -v "/\.git" | grep -v ".\/dag" | grep -v ".\/netmap" | grep -v "build" > .tmp.headers
+
+python makeinclude.py
+
+rm .tmp.headers
+rm .tmp.dirs
+
