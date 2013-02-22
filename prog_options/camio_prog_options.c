@@ -9,7 +9,7 @@
 #include <stdarg.h>
 #include <getopt.h>
 
-#include "camio_options.h"
+#include "camio_prog_options.h"
 
 #include "../camio_util.h"
 #include "../camio_errors.h"
