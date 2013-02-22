@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "camio_clock.h"
-#include "../camio_errors.h"
+#include "../errors/camio_errors.h"
 
 //#include "camio_clock_gtod.h"
 #include "camio_clock_tistream.h"

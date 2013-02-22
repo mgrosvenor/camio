@@ -22,8 +22,8 @@
 #include <sys/poll.h>
 
 #include "camio_istream_netmap.h"
-#include "../camio_errors.h"
-#include "../camio_util.h"
+#include "../errors/camio_errors.h"
+#include "../utils/camio_util.h"
 #include "../clocks/camio_time.h"
 
 #include "../netmap/netmap.h"

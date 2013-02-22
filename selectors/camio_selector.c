@@ -7,7 +7,7 @@
 
 #include <string.h>
 
-#include "../camio_errors.h"
+#include "../errors/camio_errors.h"
 
 #include "camio_selector.h"
 #include "camio_selector_spin.h"

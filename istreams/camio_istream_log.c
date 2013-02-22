@@ -11,7 +11,7 @@
 #include <errno.h>
 
 #include "camio_istream_log.h"
-#include "../camio_errors.h"
+#include "../errors/camio_errors.h"
 
 #define CAMIO_ISTREAM_ISTREAM_LOG_BUFF_INIT 4096
 

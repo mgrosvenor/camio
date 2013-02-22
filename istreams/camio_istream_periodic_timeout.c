@@ -12,7 +12,7 @@
 #include <sys/timerfd.h>
 
 #include "camio_istream_periodic_timeout.h"
-#include "../camio_errors.h"
+#include "../errors/camio_errors.h"
 
 
 int camio_istream_periodic_timeout_open(camio_istream_t* this, const camio_descr_t* opts ){

@@ -4,8 +4,8 @@
  */
 
 #include "camio_clock_tistream.h"
-#include "../camio_errors.h"
-#include "../camio_util.h"
+#include "../errors/camio_errors.h"
+#include "../utils/camio_util.h"
 
 //Initialize the new clock
 int camio_clock_tistream_init(camio_clock_t* this){

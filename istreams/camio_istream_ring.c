@@ -13,8 +13,8 @@
 #include <memory.h>
 
 #include "camio_istream_ring.h"
-#include "../camio_errors.h"
-#include "../camio_util.h"
+#include "../errors/camio_errors.h"
+#include "../utils/camio_util.h"
 
 
 //TODO XXX: These should be passed as options

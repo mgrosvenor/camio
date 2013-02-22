@@ -19,7 +19,7 @@
 #include <fcntl.h>
 
 #include "camio_istream_raw.h"
-#include "../camio_errors.h"
+#include "../errors/camio_errors.h"
 
 
 

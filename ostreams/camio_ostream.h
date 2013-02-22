@@ -10,7 +10,7 @@
 
 #include <unistd.h>
 
-#include "../camio_descr.h"
+#include "../stream_description/camio_descr.h"
 #include "../clocks/camio_clock.h"
 #include "../selectors/camio_selector.h"
 

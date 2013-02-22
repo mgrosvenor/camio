@@ -13,7 +13,7 @@
 
 
 #include "camio_descr.h"
-#include "camio_errors.h"
+#include "../errors/camio_errors.h"
 
 
 ///eg "udp:127.0.0.1,opt1=1,opt2=4"

@@ -10,8 +10,8 @@
 #include <string.h>
 
 
-#include "../camio_errors.h"
-#include "../camio_util.h"
+#include "../errors/camio_errors.h"
+#include "../utils/camio_util.h"
 
 #include "camio_selector_poll.h"
 

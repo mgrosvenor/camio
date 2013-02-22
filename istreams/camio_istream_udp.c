@@ -20,7 +20,7 @@
 #include <arpa/inet.h>
 
 #include "camio_istream_udp.h"
-#include "../camio_errors.h"
+#include "../errors/camio_errors.h"
 
 
 

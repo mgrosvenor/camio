@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "camio_ostream.h"
-#include "../camio_errors.h"
+#include "../errors/camio_errors.h"
 
 #include "camio_ostream_log.h"
 #include "camio_ostream_raw.h"

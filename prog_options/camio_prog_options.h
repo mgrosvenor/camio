@@ -7,7 +7,7 @@
 #ifndef CAMIO_OPTIONS_H_
 #define CAMIO_OPTIONS_H_
 
-#include "../camio_types.h"
+#include "../types/camio_types.h"
 
 typedef enum {
     CAMIO_OPTION_REQUIRED,       //This option is required for the program to run

@@ -9,7 +9,7 @@
 #define NUMERIC_PARSER_H_
 
 #include <stdint.h>
-#include "../camio_types.h"
+#include "../types/camio_types.h"
 
 typedef struct{
     camio_types_e type;

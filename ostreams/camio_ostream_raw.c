@@ -18,7 +18,7 @@
 #include <string.h>
 #include <fcntl.h>
 
-#include "../camio_errors.h"
+#include "../errors/camio_errors.h"
 
 #include "camio_ostream_raw.h"
 

@@ -17,8 +17,8 @@
 #include <netinet/in.h>
 
 #include "camio_istream_dag.h"
-#include "../camio_errors.h"
-#include "../camio_util.h"
+#include "../errors/camio_errors.h"
+#include "../utils/camio_util.h"
 #include "../clocks/camio_time.h"
 
 #include "../dag/dagapi.h"

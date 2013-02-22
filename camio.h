@@ -10,9 +10,9 @@
 #include "prog_options/camio_prog_options.h"
 #include "selectors/camio_selector.h"
 #include "clocks/camio_clock.h"
-#include "camio_types.h"
-#include "camio_errors.h"
-#include "camio_descr.h"
-#include "camio_util.h"
+#include "types/camio_types.h"
+#include "errors/camio_errors.h"
+#include "stream_description/camio_descr.h"
+#include "utils/camio_util.h"
 
 

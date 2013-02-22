@@ -16,8 +16,8 @@
 
 
 #include "camio_istream_periodic_timeout_fast.h"
-#include "../camio_errors.h"
-#include "../camio_util.h"
+#include "../errors/camio_errors.h"
+#include "../utils/camio_util.h"
 
 
 static inline uint64_t timespec_to_ns(struct timespec* ts){

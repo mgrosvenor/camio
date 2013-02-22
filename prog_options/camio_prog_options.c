@@ -11,9 +11,9 @@
 
 #include "camio_prog_options.h"
 
-#include "../camio_util.h"
-#include "../camio_errors.h"
-#include "../camio_types.h"
+#include "../utils/camio_util.h"
+#include "../errors/camio_errors.h"
+#include "../types/camio_types.h"
 
 #include "../parsing/numeric_parser.h"
 #include "../parsing/bool_parser.h"

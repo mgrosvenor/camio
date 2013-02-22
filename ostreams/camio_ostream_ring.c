@@ -12,8 +12,8 @@
 #include <sys/mman.h>
 #include <memory.h>
 
-#include "../camio_util.h"
-#include "../camio_errors.h"
+#include "../utils/camio_util.h"
+#include "../errors/camio_errors.h"
 
 #include "camio_ostream_ring.h"
 

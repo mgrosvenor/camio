@@ -14,8 +14,8 @@
 #include <sys/stat.h>
 
 #include "camio_istream_blob.h"
-#include "../camio_errors.h"
-#include "../camio_util.h"
+#include "../errors/camio_errors.h"
+#include "../utils/camio_util.h"
 
 
 int camio_istream_blob_open(camio_istream_t* this, const camio_descr_t* descr ){

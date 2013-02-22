@@ -8,7 +8,7 @@
 #include "numeric_parser.h"
 #include "utils.h"
 #include "ctype.h"
-#include "../camio_errors.h"
+#include "../errors/camio_errors.h"
 
 
 enum {
