@@ -8,7 +8,7 @@
 #include <memory.h>
 #include <signal.h>
 
-#include "include/camio.h"
+#include "include/camio/camio.h"
 
 camio_list_t(istream) istreams = {};
 camio_list_t(ostream) ostreams = {};
