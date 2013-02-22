@@ -19,12 +19,12 @@ int camio_istream_log_open(camio_istream_t* this, const camio_descr_t* descr ){
     camio_istream_log_t* priv = this->priv;
 
     if(descr->opt_head){
-        eprintf_exit(CAMIO_ERR_UNKNOWN_OPT, "Option(s) supplied, but none expected\n");
+        eprintf_exit("Option(s) supplied, but none expected\n");
     }
 
     priv->line_buffer = malloc(CAMIO_ISTREAM_ISTREAM_LOG_BUFF_INIT);
     if(!priv->line_buffer){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "Could not allocate line buffer\n");
+        eprintf_exit("Could not allocate line buffer\n");
     }
     priv->line_buffer_size  = CAMIO_ISTREAM_ISTREAM_LOG_BUFF_INIT;
     priv->data_head_ptr     = priv->line_buffer;
@@ -34,22 +34,22 @@ int camio_istream_log_open(camio_istream_t* this, const camio_descr_t* descr ){
         if(priv->params->fd > -1){
             this->fd = priv->params->fd;
             priv->is_closed = 0;
-            return CAMIO_ERR_NONE;
+            return 0;
         }
     }
 
     //Grab a file descriptor and rock on
     if(!descr->query){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "No filename supplied\n");
+        eprintf_exit( "No filename supplied\n");
     }
 
     this->fd = open(descr->query, O_RDONLY);
     if(this->fd == -1){
         printf("\"%s\"",descr->query);
-        eprintf_exit(CAMIO_ERR_FILE_OPEN, "Could not open file \"%s\"\n", descr->query);
+        eprintf_exit( "Could not open file \"%s\"\n", descr->query);
     }
     priv->is_closed = 0;
-    return CAMIO_ERR_NONE;
+    return 0;
 }
 
 
@@ -64,7 +64,7 @@ static inline void set_fd_blocking(int fd, int blocking){
     int flags = fcntl(fd, F_GETFL, 0);
 
     if (flags == -1){
-        eprintf_exit(CAMIO_ERR_FILE_FLAGS, "Could not get file flags\n");
+        eprintf_exit("Could not get file flags\n");
     }
 
     if (blocking){
@@ -75,7 +75,7 @@ static inline void set_fd_blocking(int fd, int blocking){
     }
 
     if( fcntl(fd, F_SETFL, flags) == -1){
-        eprintf_exit(CAMIO_ERR_FILE_FLAGS, "Could not set file flags\n");
+        eprintf_exit("Could not set file flags\n");
     }
 }
 
@@ -95,7 +95,7 @@ static int read_to_buff(camio_istream_log_t* priv, uint8_t* new_data_ptr, int bl
         }
 
         //Uh ohh, some other error! Eek! Die!
-        eprintf_exit(CAMIO_ERR_FILE_READ, "Could not read tlog input error no=%i (%s)\n", errno, strerror(errno));
+        eprintf_exit("Could not read tlog input error no=%i (%s)\n", errno, strerror(errno));
     }
 
     //We've hit the end of the file. Close and leave.
@@ -220,7 +220,7 @@ static int prepare_next(camio_istream_log_t* priv, int blocking){
             priv->line_buffer = realloc(priv->line_buffer, priv->line_buffer_size * 2);
             priv->data_head_ptr = priv->line_buffer;
             if(!priv->line_buffer){
-                eprintf_exit(CAMIO_ERR_NULL_PTR, "Could not grow line buffer\n");
+                eprintf_exit( "Could not grow line buffer\n");
             }
             priv->line_buffer_size *= 2;
         }
@@ -291,7 +291,7 @@ void camio_istream_log_delete(camio_istream_t* this){
 
 camio_istream_t* camio_istream_log_construct(camio_istream_log_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_log_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"log stream supplied is null\n");
+        eprintf_exit("log stream supplied is null\n");
     }
     //Initialize the local variables
     priv->is_closed         = 1;
@@ -323,7 +323,7 @@ camio_istream_t* camio_istream_log_construct(camio_istream_log_t* priv, const ca
 camio_istream_t* camio_istream_log_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_log_params_t* params){
     camio_istream_log_t* priv = malloc(sizeof(camio_istream_log_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for log istream creation\n");
+        eprintf_exit("No memory available for log istream creation\n");
     }
     return camio_istream_log_construct(priv, descr, clock, params);
 }

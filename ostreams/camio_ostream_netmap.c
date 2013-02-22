@@ -91,7 +91,7 @@ static void do_ioctl_flags(const char* ifname, size_t flags)
     //Get a control socket
     socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (socket_fd < 0) {
-        eprintf_exit(CAMIO_ERR_SOCKET, "Could not open device control socket\n");
+        eprintf_exit( "Could not open device control socket\n");
     }
 
     bzero(&ifr, sizeof(&ifr));
@@ -100,7 +100,7 @@ static void do_ioctl_flags(const char* ifname, size_t flags)
     ifr.ifr_flags = flags & 0xffff;
 
     if( ioctl(socket_fd, SIOCSIFFLAGS, &ifr) ){
-        eprintf_exit(CAMIO_ERR_IOCTL, "Could not set interface flags 0x%08x\n", flags);
+        eprintf_exit( "Could not set interface flags 0x%08x\n", flags);
     }
 
     close(socket_fd);
@@ -116,7 +116,7 @@ static void do_ioctl_ethtool(const char* ifname, int subcmd)
     //Get a control socket
     socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (socket_fd < 0) {
-        eprintf_exit(CAMIO_ERR_SOCKET, "Could not open device control socket\n");
+        eprintf_exit( "Could not open device control socket\n");
     }
 
     bzero(&ifr, sizeof(&ifr));
@@ -128,7 +128,7 @@ static void do_ioctl_ethtool(const char* ifname, int subcmd)
     ifr.ifr_data = (caddr_t)&eval;
 
     if( ioctl(socket_fd, SIOCETHTOOL, &ifr) ){
-        eprintf_exit(CAMIO_ERR_IOCTL, "Could not set ethtool value\n");
+        eprintf_exit( "Could not set ethtool value\n");
     }
 
 }
@@ -139,11 +139,11 @@ int camio_ostream_netmap_open(camio_ostream_t* this, const camio_descr_t* descr 
     struct nmreq req;
 
     if(unlikely((size_t)descr->opt_head)){
-        eprintf_exit(CAMIO_ERR_UNKNOWN_OPT, "Option(s) supplied, but none expected\n");
+        eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
     if(unlikely(!descr->query)){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "No device supplied\n");
+        eprintf_exit( "No device supplied\n");
     }
 
     const char* iface = descr->query;
@@ -152,7 +152,7 @@ int camio_ostream_netmap_open(camio_ostream_t* this, const camio_descr_t* descr 
     netmap_fd = open("/dev/netmap", O_RDWR);
     printf("Opening %s\n", "/dev/netmap");
     if(unlikely(netmap_fd < 0)){
-        eprintf_exit(CAMIO_ERR_FILE_OPEN, "Could not open file \"%s\". Error=%s\n", "/dev/netmap", strerror(errno));
+        eprintf_exit( "Could not open file \"%s\". Error=%s\n", "/dev/netmap", strerror(errno));
     }
 
     //Request a specific interface
@@ -162,7 +162,7 @@ int camio_ostream_netmap_open(camio_ostream_t* this, const camio_descr_t* descr 
     req.nr_ringid = 0; //All hw rings
 
     if(ioctl(netmap_fd, NIOCGINFO, &req)){
-        eprintf_exit(CAMIO_ERR_IOCTL, "Could not get info on netmap interface %s\n", iface);
+        eprintf_exit( "Could not get info on netmap interface %s\n", iface);
     }
 
     printf("IF = %s\n", req.nr_name);
@@ -170,7 +170,7 @@ int camio_ostream_netmap_open(camio_ostream_t* this, const camio_descr_t* descr 
     priv->mem_size = req.nr_memsize;
 
     if(ioctl(netmap_fd, NIOCREGIF, &req)){
-        eprintf_exit(CAMIO_ERR_IOCTL, "Could not register netmap interface %s\n", iface);
+        eprintf_exit( "Could not register netmap interface %s\n", iface);
     }
 
     printf("Memsize  = %u\n"
@@ -204,7 +204,7 @@ int camio_ostream_netmap_open(camio_ostream_t* this, const camio_descr_t* descr 
     else{
         priv->nm_mem = mmap(0, priv->mem_size, PROT_WRITE | PROT_READ, MAP_SHARED, netmap_fd, 0);
         if(unlikely(priv->nm_mem == MAP_FAILED)){
-            eprintf_exit(CAMIO_ERR_MMAP, "Could not memory map blob file \"%s\". Error=%s\n", descr->query, strerror(errno));
+            eprintf_exit( "Could not memory map blob file \"%s\". Error=%s\n", descr->query, strerror(errno));
         }
     }
 
@@ -245,7 +245,7 @@ int camio_ostream_netmap_open(camio_ostream_t* this, const camio_descr_t* descr 
     priv->is_closed = 0;
 
 
-    return CAMIO_ERR_NONE;
+    return 0;
 }
 
 void camio_ostream_netmap_close(camio_ostream_t* this){
@@ -311,7 +311,7 @@ struct netmap_slot* get_free_slot(camio_ostream_t* this ){
         }
         
         if(poll(fds, 1, 10000) <= 0){
-		    eprintf_exit(CAMIO_ERR_SEND,"Failed on poll %s\n", strerror(errno));
+		    eprintf_exit("Failed on poll %s\n", strerror(errno));
         }
 
     }
@@ -354,7 +354,7 @@ uint8_t* camio_ostream_netmap_start_write(camio_ostream_t* this, size_t len ){
 //Returns non-zero if a call to start_write will be non-blocking
 int camio_ostream_netmap_ready(camio_ostream_t* this){
     //Not implemented
-    eprintf_exit(CAMIO_ERR_NOT_IMPL, "\n");
+    eprintf_exit( "\n");
     return 0;
 }
 
@@ -369,7 +369,7 @@ uint8_t* camio_ostream_netmap_end_write(camio_ostream_t* this, size_t len){
     void* result = NULL;   
 
     if(unlikely(len > 2* 1024)){
-        eprintf_exit(CAMIO_ERR_FILE_WRITE, "The supplied length %lu is greater than the buffer size %lu\n", len, priv->packet_size);
+        eprintf_exit( "The supplied length %lu is greater than the buffer size %lu\n", len, priv->packet_size);
     }
 
     //This is the fast path, for zero copy operation need and assigned buffer
@@ -463,7 +463,7 @@ int camio_ostream_netmap_assign_write(camio_ostream_t* this, uint8_t* buffer, si
     camio_ostream_netmap_t* priv = this->priv;
 
     if(!buffer){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"Assigned buffer is null.");
+        eprintf_exit("Assigned buffer is null.");
     }
 
     priv->assigned_buffer    = buffer;
@@ -479,7 +479,7 @@ int camio_ostream_netmap_assign_write(camio_ostream_t* this, uint8_t* buffer, si
 
 camio_ostream_t* camio_ostream_netmap_construct(camio_ostream_netmap_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_netmap_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"netmap stream supplied is null\n");
+        eprintf_exit("netmap stream supplied is null\n");
     }
     //Initialize the local variables
     priv->is_closed             = 0;
@@ -526,7 +526,7 @@ camio_ostream_t* camio_ostream_netmap_construct(camio_ostream_netmap_t* priv, co
 camio_ostream_t* camio_ostream_netmap_new( const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_netmap_params_t* params){
     camio_ostream_netmap_t* priv = malloc(sizeof(camio_ostream_netmap_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for ostream netmap creation\n");
+        eprintf_exit("No memory available for ostream netmap creation\n");
     }
     return camio_ostream_netmap_construct(priv, descr, clock, params);
 }

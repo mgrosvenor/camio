@@ -7,8 +7,8 @@
 #define CAMIO_TYPES_H_
 
 #include <stdint.h>
-#include "istreams/camio_istream.h"
-#include "ostreams/camio_ostream.h"
+#include "../istreams/camio_istream.h"
+#include "../ostreams/camio_ostream.h"
 
 
 typedef enum {

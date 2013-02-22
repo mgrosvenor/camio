@@ -49,11 +49,11 @@ int camio_selector_spin_init(camio_selector_t* this){
 int camio_selector_spin_insert(camio_selector_t* this, camio_istream_t* istream, size_t index){
     camio_selector_spin_t* priv = this->priv;
     if(!istream){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No istream supplied\n");
+        eprintf_exit("No istream supplied\n");
     }
 
     if(priv->stream_count >= CAMIO_SELECTOR_SPIN_MAX_STREAMS){
-        wprintf(CAMIO_ERR_STREAMS_OVERRUN, "Cannot insert more than %u streams in this selector\n", CAMIO_SELECTOR_SPIN_MAX_STREAMS);
+        wprintf( "Cannot insert more than %u streams in this selector\n", CAMIO_SELECTOR_SPIN_MAX_STREAMS);
         return -1;
     }
 
@@ -88,7 +88,7 @@ int camio_selector_spin_remove(camio_selector_t* this, size_t index){
       }
 
     if(index >= CAMIO_SELECTOR_SPIN_MAX_STREAMS){
-        wprintf(CAMIO_ERR_STREAMS_OVERRUN, "Cannot remove this stream (%lu) from this selector. The index could not be found.\n", index);
+        wprintf( "Cannot remove this stream (%lu) from this selector. The index could not be found.\n", index);
         return -1;
     }
 
@@ -147,7 +147,7 @@ void camio_selector_spin_delete(camio_selector_t* this){
 
 camio_selector_t* camio_selector_spin_construct(camio_selector_spin_t* priv, camio_clock_t* clock, camio_selector_spin_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"spin stream supplied is null\n");
+        eprintf_exit("spin stream supplied is null\n");
     }
     //Initialize the local variables
     priv->params           = params;
@@ -179,7 +179,7 @@ camio_selector_t* camio_selector_spin_construct(camio_selector_spin_t* priv, cam
 camio_selector_t* camio_selector_spin_new(camio_clock_t* clock, camio_selector_spin_params_t* params){
     camio_selector_spin_t* priv = malloc(sizeof(camio_selector_spin_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for spin selector creation\n");
+        eprintf_exit("No memory available for spin selector creation\n");
     }
     return camio_selector_spin_construct(priv, clock, params);
 }

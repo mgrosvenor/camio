@@ -25,11 +25,11 @@ int camio_selector_poll_init(camio_selector_t* this){
 int camio_selector_poll_insert(camio_selector_t* this, camio_istream_t* istream, size_t index){
     camio_selector_poll_t* priv = this->priv;
     if(!istream){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No istream supplied\n");
+        eprintf_exit("No istream supplied\n");
     }
 
     if(priv->stream_count >= CAMIO_SELECTOR_POLL_MAX_STREAMS){
-        wprintf(CAMIO_ERR_STREAMS_OVERRUN, "Cannot insert more than %u streams in this selector\n", CAMIO_SELECTOR_POLL_MAX_STREAMS);
+        wprintf( "Cannot insert more than %u streams in this selector\n", CAMIO_SELECTOR_POLL_MAX_STREAMS);
         return -1;
     }
 
@@ -68,7 +68,7 @@ int camio_selector_poll_remove(camio_selector_t* this, size_t index){
       }
 
     if(index >= CAMIO_SELECTOR_POLL_MAX_STREAMS){
-        wprintf(CAMIO_ERR_STREAMS_OVERRUN, "Cannot remove this stream (%lu) from this selector. The index could not be found.\n", index);
+        wprintf( "Cannot remove this stream (%lu) from this selector. The index could not be found.\n", index);
         return -1;
     }
 
@@ -83,7 +83,7 @@ size_t camio_selector_poll_select(camio_selector_t* this){
 
     int result = poll(priv->fds,priv->stream_count,-1);
     if(result < 0){
-        eprintf_exit(CAMIO_ERR_FILE_READ, "Poll failed with error =%s", strerror(errno));
+        eprintf_exit( "Poll failed with error =%s", strerror(errno));
     }
 
     size_t i = (priv->last + 1) % priv->stream_count; //Start from the next stream to avoid starvation
@@ -109,7 +109,7 @@ void camio_selector_poll_delete(camio_selector_t* this){
 
 camio_selector_t* camio_selector_poll_construct(camio_selector_poll_t* priv, camio_clock_t* clock, camio_selector_poll_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"poll stream supplied is null\n");
+        eprintf_exit("poll stream supplied is null\n");
     }
     //Initialize the local variables
     priv->params           = params;
@@ -141,7 +141,7 @@ camio_selector_t* camio_selector_poll_construct(camio_selector_poll_t* priv, cam
 camio_selector_t* camio_selector_poll_new(camio_clock_t* clock, camio_selector_poll_params_t* params){
     camio_selector_poll_t* priv = malloc(sizeof(camio_selector_poll_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for poll selector creation\n");
+        eprintf_exit("No memory available for poll selector creation\n");
     }
     return camio_selector_poll_construct(priv, clock, params);
 }

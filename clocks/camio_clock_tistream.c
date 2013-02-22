@@ -44,7 +44,7 @@ int camio_clock_tistream_set(camio_clock_t* this, camio_time_t* current){
 
 camio_clock_t* camio_clock_tistream_construct(camio_clock_tistream_t* priv, camio_clock_tistream_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"Clock supplied is null\n");
+        eprintf_exit("Clock supplied is null\n");
     }
     //Initialize the local variables
     priv-> time.counter     = 0;
@@ -67,7 +67,7 @@ camio_clock_t* camio_clock_tistream_construct(camio_clock_tistream_t* priv, cami
 camio_clock_t* camio_clock_tistream_new( camio_clock_tistream_params_t* params){
     camio_clock_tistream_t* priv = malloc(sizeof(camio_clock_tistream_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for log istream creation\n");
+        eprintf_exit("No memory available for log istream creation\n");
     }
     return camio_clock_tistream_construct(priv, params);
 }

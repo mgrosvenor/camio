@@ -30,22 +30,22 @@ int camio_ostream_raw_open(camio_ostream_t* this, const camio_descr_t* descr ){
     int raw_sock_fd;
 
     if(descr->opt_head){
-        eprintf_exit(CAMIO_ERR_UNKNOWN_OPT, "Option(s) supplied, but none expected\n");
+        eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
     if(!descr->query){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "No interface supplied\n");
+        eprintf_exit( "No interface supplied\n");
     }
 
     priv->buffer = malloc(getpagesize()); //Allocate 1 page
     if(!priv->buffer){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "Failed to allocate message buffer\n");
+        eprintf_exit( "Failed to allocate message buffer\n");
     }
     priv->buffer_size = getpagesize();
 
     /* Open the raw socket MAC/PHY layer output stage */
     if ( !(raw_sock_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) ){
-        eprintf_exit(CAMIO_ERR_SOCKET,"Could not open raw socket. Error = %s\n",strerror(errno));
+        eprintf_exit("Could not open raw socket. Error = %s\n",strerror(errno));
     }
 
     /* get the interface num */
@@ -53,7 +53,7 @@ int camio_ostream_raw_open(camio_ostream_t* this, const camio_descr_t* descr ){
     memset(&if_idx, 0, sizeof(struct ifreq));
     strncpy(if_idx.ifr_name, iface, IFNAMSIZ-1);
     if (ioctl(raw_sock_fd, SIOCGIFINDEX, &if_idx) < 0){
-        eprintf_exit(CAMIO_ERR_IOCTL,"Could not get interface name. Error = %s\n",strerror(errno));
+        eprintf_exit("Could not get interface name. Error = %s\n",strerror(errno));
     }
 
     struct sockaddr_ll socket_address;
@@ -62,17 +62,17 @@ int camio_ostream_raw_open(camio_ostream_t* this, const camio_descr_t* descr ){
     socket_address.sll_ifindex  =  if_idx.ifr_ifindex;
 
     if( bind(raw_sock_fd, (struct sockaddr *)&socket_address, sizeof(socket_address)) ){
-        eprintf_exit(CAMIO_ERR_BIND,"Could not bind raw socket. Error = %s\n",strerror(errno));
+        eprintf_exit("Could not bind raw socket. Error = %s\n",strerror(errno));
     }
 
     int SNDBUFF_SIZE = 512 * 1024 * 1024;
     if (setsockopt(raw_sock_fd, SOL_SOCKET, SO_SNDBUF, &SNDBUFF_SIZE, sizeof(SNDBUFF_SIZE)) < 0) {
-        eprintf_exit(CAMIO_ERR_SOCK_OPT,"Could not set socket option. Error = %s\n",strerror(errno));
+        eprintf_exit("Could not set socket option. Error = %s\n",strerror(errno));
     }
 
     this->fd = raw_sock_fd;
     priv->is_closed = 0;
-    return CAMIO_ERR_NONE;
+    return 0;
 }
 
 void camio_ostream_raw_close(camio_ostream_t* this){
@@ -91,7 +91,7 @@ uint8_t* camio_ostream_raw_start_write(camio_ostream_t* this, size_t len ){
     if(len > priv->buffer_size){
         priv->buffer = realloc(priv->buffer, len);
         if(!priv->buffer){
-            eprintf_exit(CAMIO_ERR_NULL_PTR, "Could not grow message buffer\n");
+            eprintf_exit( "Could not grow message buffer\n");
         }
         priv->buffer_size = len;
     }
@@ -102,7 +102,7 @@ uint8_t* camio_ostream_raw_start_write(camio_ostream_t* this, size_t len ){
 //Returns non-zero if a call to start_write will be non-blocking
 int camio_ostream_raw_ready(camio_ostream_t* this){
     //Not implemented
-    eprintf_exit(CAMIO_ERR_NOT_IMPL, "\n");
+    eprintf_exit( "\n");
     return 0;
 }
 
@@ -111,7 +111,7 @@ static void set_fd_blocking(int fd, int blocking){
     int flags = fcntl(fd, F_GETFL, 0);
 
     if (flags == -1){
-        eprintf_exit(CAMIO_ERR_FILE_FLAGS, "Could not get file flags\n");
+        eprintf_exit( "Could not get file flags\n");
     }
 
     if (blocking){
@@ -122,7 +122,7 @@ static void set_fd_blocking(int fd, int blocking){
     }
 
     if( fcntl(fd, F_SETFL, flags) == -1){
-        eprintf_exit(CAMIO_ERR_FILE_FLAGS, "Could not set file flags\n");
+        eprintf_exit( "Could not set file flags\n");
     }
 }
 
@@ -137,9 +137,9 @@ uint8_t* camio_ostream_raw_end_write(camio_ostream_t* this, size_t len){
         result = send(this->fd,priv->assigned_buffer,len,0);
         if(result < 1){
             if(errno == EAGAIN){
-                eprintf_exit(CAMIO_ERR_SEND, "Could not send on socket, non-blocking. Error = %s\n", strerror(errno));
+                eprintf_exit( "Could not send on socket, non-blocking. Error = %s\n", strerror(errno));
             }
-            eprintf_exit(CAMIO_ERR_SEND, "Could not send on raw socket. Error = %s\n", strerror(errno));
+            eprintf_exit( "Could not send on raw socket. Error = %s\n", strerror(errno));
         }
 
         priv->assigned_buffer    = NULL;
@@ -149,7 +149,7 @@ uint8_t* camio_ostream_raw_end_write(camio_ostream_t* this, size_t len){
 
     result = send(this->fd,priv->buffer,len,0);
     if(result < 1){
-        eprintf_exit(CAMIO_ERR_SEND, "Could not send on raw socket. Error = %s\n", strerror(errno));
+        eprintf_exit( "Could not send on raw socket. Error = %s\n", strerror(errno));
     }
     return NULL;
 }
@@ -171,7 +171,7 @@ int camio_ostream_raw_assign_write(camio_ostream_t* this, uint8_t* buffer, size_
     camio_ostream_raw_t* priv = this->priv;
 
     if(!buffer){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"Assigned buffer is null.");
+        eprintf_exit("Assigned buffer is null.");
     }
 
     priv->assigned_buffer    = buffer;
@@ -187,7 +187,7 @@ int camio_ostream_raw_assign_write(camio_ostream_t* this, uint8_t* buffer, size_
 
 camio_ostream_t* camio_ostream_raw_construct(camio_ostream_raw_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_raw_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"raw stream supplied is null\n");
+        eprintf_exit("raw stream supplied is null\n");
     }
     //Initialize the local variables
     priv->is_closed             = 1;
@@ -222,7 +222,7 @@ camio_ostream_t* camio_ostream_raw_construct(camio_ostream_raw_t* priv, const ca
 camio_ostream_t* camio_ostream_raw_new( const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_raw_params_t* params){
     camio_ostream_raw_t* priv = malloc(sizeof(camio_ostream_raw_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for ostream raw creation\n");
+        eprintf_exit("No memory available for ostream raw creation\n");
     }
     return camio_ostream_raw_construct(priv, descr, clock, params);
 }

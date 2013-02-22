@@ -30,7 +30,7 @@ camio_selector_t* camio_selector_new(const char* description, camio_clock_t* clo
     }
 
     else{
-        eprintf_exit(CAMIO_ERR_UNKNOWN_SELECTOR,"Could not create selector from description \"%s\" \n", description);
+        eprintf_exit("Could not create selector from description \"%s\" \n", description);
     }
 
     return result;

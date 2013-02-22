@@ -11,9 +11,9 @@
 #include "istreams/camio_istream_log.h"
 #include "ostreams/camio_ostream_log.h"
 #include "prog_options/camio_prog_options.h"
-#include "camio_types.h"
+#include "types/camio_types.h"
 
-#include "camio_util.h"
+#include "utils/camio_util.h"
 
 camio_list_t(istream) istreams = {};
 camio_list_t(ostream) ostreams = {};

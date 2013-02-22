@@ -60,7 +60,7 @@ void print_usage(const char* err_tx_fmt, ...){
 
 
 int camio_options_tail(char* description){
-    eprintf_exit(CAMIO_ERR_NOT_IMPL,"");
+    eprintf_exit("");
     return 0;
 }
 
@@ -89,7 +89,7 @@ int camio_options_add(camio_options_mode_e mode, char short_str, const char* lon
     //Create a new opt def
     camio_options_opt_t* opt_def_new = malloc(sizeof(camio_options_opt_t));
     if(!opt_def_new){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "Could not allocate memory for option\n");
+        eprintf_exit( "Could not allocate memory for option\n");
     }
     bzero(opt_def_new,sizeof(camio_options_opt_t));
 
@@ -101,7 +101,7 @@ int camio_options_add(camio_options_mode_e mode, char short_str, const char* lon
     opt_def_new->type      = type;
 
     if(mode == CAMIO_OPTION_FLAG && type != CAMIO_BOOL){
-        eprintf_exit(CAMIO_ERR_NONE, "Flag options must be used with type CAMIO_BOOL\n");
+        eprintf_exit( "Flag options must be used with type CAMIO_BOOL\n");
     }
 
     if(mode == CAMIO_OPTION_UNLIMTED){
@@ -110,11 +110,11 @@ int camio_options_add(camio_options_mode_e mode, char short_str, const char* lon
                 opts.unlimted_set = 1;
             }
             else{
-                eprintf_exit(CAMIO_ERR_NONE, "Unlimited options must be used with a list type variable eg camio_list(string)\n");
+                eprintf_exit( "Unlimited options must be used with a list type variable eg camio_list(string)\n");
             }
         }
         else{
-            eprintf_exit(CAMIO_ERR_NONE, "Unlimited options can only be used once!\n");
+            eprintf_exit( "Unlimited options can only be used once!\n");
         }
     }
 
@@ -179,7 +179,7 @@ int camio_options_add(camio_options_mode_e mode, char short_str, const char* lon
             break;
 
         default:
-            eprintf_exit(CAMIO_ERR_NONE, "Unknown type %lu for option %s\n", type, long_str);
+            eprintf_exit( "Unknown type %lu for option %s\n", type, long_str);
             break;
     }
 

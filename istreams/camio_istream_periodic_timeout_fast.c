@@ -36,12 +36,12 @@ int camio_istream_periodic_timeout_fast_open(camio_istream_t* this, const camio_
 
 
     if(opts->opt_head){
-        eprintf_exit(CAMIO_ERR_UNKNOWN_OPT, "Option(s) supplied, but none expected\n");
+        eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
     //Parse the time spec
     if(!opts->query){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "No timer specification supplied expected nanoseconds format\n");
+        eprintf_exit( "No timer specification supplied expected nanoseconds format\n");
     }
 
     if(priv->params){
@@ -70,7 +70,7 @@ int camio_istream_periodic_timeout_fast_open(camio_istream_t* this, const camio_
     this->fd = -1;
 
     priv->is_closed = 0;
-    return CAMIO_ERR_NONE;
+    return 0;
 }
 
 
@@ -146,7 +146,7 @@ void camio_istream_periodic_timeout_fast_delete(camio_istream_t* this){
 
 camio_istream_t* camio_istream_periodic_timeout_fast_construct(camio_istream_periodic_timeout_fast_t* priv, const camio_descr_t* opts, camio_clock_t* clock, camio_istream_periodic_timeout_fast_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"periodic_timeout_fast stream supplied is null\n");
+        eprintf_exit("periodic_timeout_fast stream supplied is null\n");
     }
     //Initialize the local variables
     priv->is_closed         = 1;
@@ -177,7 +177,7 @@ camio_istream_t* camio_istream_periodic_timeout_fast_construct(camio_istream_per
 camio_istream_t* camio_istream_periodic_timeout_fast_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_periodic_timeout_fast_params_t* params){
     camio_istream_periodic_timeout_fast_t* priv = malloc(sizeof(camio_istream_periodic_timeout_fast_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for periodic_timeout_fast istream creation\n");
+        eprintf_exit("No memory available for periodic_timeout_fast istream creation\n");
     }
     return camio_istream_periodic_timeout_fast_construct(priv, opts, clock, params);
 }

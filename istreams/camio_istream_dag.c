@@ -28,25 +28,25 @@ int camio_istream_dag_open(camio_istream_t* this, const camio_descr_t* descr ){
     int dag_fd = -1;
 
     if(unlikely((size_t)descr->opt_head)){
-        eprintf_exit(CAMIO_ERR_UNKNOWN_OPT, "Option(s) supplied, but none expected\n");
+        eprintf_exit("Option(s) supplied, but none expected\n");
     }
 
     if(unlikely(!descr->query)){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "No device supplied\n");
+        eprintf_exit("No device supplied\n");
     }
 
     dag_fd = dag_open(descr->query);
     printf("Opening %s\n", descr->query);
     if(unlikely(dag_fd < 0)){
-        eprintf_exit(CAMIO_ERR_FILE_OPEN, "Could not open file \"%s\". Error=%s\n", descr->query, strerror(errno));
+        eprintf_exit("Could not open file \"%s\". Error=%s\n", descr->query, strerror(errno));
     }
 
     if(dag_attach_stream(dag_fd, priv->dag_stream, 0, 0) < 0){
-        eprintf_exit(CAMIO_ERR_FILE_OPEN, "Could not attach to dag stream \"%lu\". Error=%s\n", priv->dag_stream, strerror(errno));
+        eprintf_exit("Could not attach to dag stream \"%lu\". Error=%s\n", priv->dag_stream, strerror(errno));
     }
 
     if(dag_start_stream(dag_fd, priv->dag_stream) < 0){
-        eprintf_exit(CAMIO_ERR_FILE_OPEN, "Could not start dag stream \"%lu\". Error=%s\n", priv->dag_stream, strerror(errno));
+        eprintf_exit( "Could not start dag stream \"%lu\". Error=%s\n", priv->dag_stream, strerror(errno));
     }
 
 
@@ -58,7 +58,7 @@ int camio_istream_dag_open(camio_istream_t* this, const camio_descr_t* descr ){
 
     this->fd = dag_fd;
     priv->is_closed = 0;
-    return CAMIO_ERR_NONE;
+    return 0;
 }
 
 
@@ -86,7 +86,7 @@ static int prepare_next(camio_istream_t* this){
     if( likely((size_t)data)){
         //Is this an ERF? Or did something wierd happen?
         if ( unlikely(data->type == 0)){
-            wprintf(CAMIO_ERR_NOT_AN_ERF, "Not ERF payload \n");
+            wprintf("Not ERF payload \n");
             return 0;
         }
 
@@ -157,7 +157,7 @@ void camio_istream_dag_delete(camio_istream_t* this){
 
 camio_istream_t* camio_istream_dag_construct(camio_istream_dag_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_dag_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"dag stream supplied is null\n");
+        eprintf_exit("dag stream supplied is null\n");
     }
 
     //Initialize the local variables
@@ -189,7 +189,7 @@ camio_istream_t* camio_istream_dag_construct(camio_istream_dag_t* priv, const ca
 camio_istream_t* camio_istream_dag_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_dag_params_t* params){
     camio_istream_dag_t* priv = malloc(sizeof(camio_istream_dag_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for dag istream creation\n");
+        eprintf_exit("No memory available for dag istream creation\n");
     }
     return camio_istream_dag_construct(priv, descr, clock, params);
 }

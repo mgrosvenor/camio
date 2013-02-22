@@ -22,16 +22,16 @@ int camio_istream_blob_open(camio_istream_t* this, const camio_descr_t* descr ){
     camio_istream_blob_t* priv = this->priv;
 
     if(unlikely((size_t)descr->opt_head)){
-        eprintf_exit(CAMIO_ERR_UNKNOWN_OPT, "Option(s) supplied, but none expected\n");
+        eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
     if(unlikely(!descr->query)){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "No filename supplied\n");
+        eprintf_exit("No filename supplied\n");
     }
 
     this->fd = open(descr->query, O_RDONLY);
     if(unlikely(this->fd < 0)){
-        eprintf_exit(CAMIO_ERR_FILE_OPEN, "Could not open file \"%s\". Error=%s\n", descr->query, strerror(errno));
+        eprintf_exit("Could not open file \"%s\". Error=%s\n", descr->query, strerror(errno));
     }
 
     //Get the file size
@@ -44,13 +44,13 @@ int camio_istream_blob_open(camio_istream_t* this, const camio_descr_t* descr ){
         //Map the whole thing into memory
         priv->blob = mmap( NULL, priv->blob_size, PROT_READ, MAP_SHARED, this->fd, 0);
         if(unlikely(priv->blob == MAP_FAILED)){
-            eprintf_exit(CAMIO_ERR_MMAP, "Could not memory map blob file \"%s\". Error=%s\n", descr->query, strerror(errno));
+            eprintf_exit("Could not memory map blob file \"%s\". Error=%s\n", descr->query, strerror(errno));
         }
 
         priv->is_closed = 0;
     }
 
-    return CAMIO_ERR_NONE;
+    return 0;
 }
 
 
@@ -120,7 +120,7 @@ void camio_istream_blob_delete(camio_istream_t* this){
 
 camio_istream_t* camio_istream_blob_construct(camio_istream_blob_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_blob_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"blob stream supplied is null\n");
+        eprintf_exit("Blob stream supplied is null\n");
     }
 
     //Initialize the local variables
@@ -153,7 +153,7 @@ camio_istream_t* camio_istream_blob_construct(camio_istream_blob_t* priv, const 
 camio_istream_t* camio_istream_blob_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_blob_params_t* params){
     camio_istream_blob_t* priv = malloc(sizeof(camio_istream_blob_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for blob istream creation\n");
+        eprintf_exit("No memory available for blob istream creation\n");
     }
     return camio_istream_blob_construct(priv, descr, clock, params);
 }

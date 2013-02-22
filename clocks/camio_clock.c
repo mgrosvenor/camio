@@ -26,7 +26,7 @@ camio_clock_t* camio_clock_new( char* description, void* parameters){
         result = camio_clock_tistream_new( parameters );
     }
     else{
-        eprintf_exit(CAMIO_ERR_UNKNOWN_CLOCK,"Could not create clock from description \"%s\" \n", description);
+        eprintf_exit("Could not create clock from description \"%s\" \n", description);
     }
 
     return result;

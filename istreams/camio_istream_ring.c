@@ -27,11 +27,11 @@ int camio_istream_ring_open(camio_istream_t* this, const camio_descr_t* descr ){
     volatile uint8_t* ring = NULL;
 
     if(unlikely((size_t)descr->opt_head)){
-        eprintf_exit(CAMIO_ERR_UNKNOWN_OPT, "Option(s) supplied, but none expected\n");
+        eprintf_exit("Option(s) supplied, but none expected\n");
     }
 
     if(unlikely(!descr->query)){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "No filename supplied\n");
+        eprintf_exit( "No filename supplied\n");
     }
 
     ring_fd = open(descr->query, O_RDONLY);
@@ -39,21 +39,21 @@ int camio_istream_ring_open(camio_istream_t* this, const camio_descr_t* descr ){
     if(unlikely(ring_fd < 0)){
         ring_fd = open(descr->query, O_RDWR | O_CREAT | O_TRUNC , (mode_t)(0666));
         if(unlikely(ring_fd < 0)){
-            eprintf_exit(CAMIO_ERR_FILE_OPEN, "Could not open file \"%s\". Error=%s\n", descr->query, strerror(errno));
+            eprintf_exit("Could not open file \"%s\". Error=%s\n", descr->query, strerror(errno));
         }
 
         //Resize the file
         if(lseek(ring_fd, CAMIO_ISTREAM_RING_SIZE -1, SEEK_SET) < 0){
-            eprintf_exit(CAMIO_ERR_FILE_LSEEK, "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
+            eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
         }
 
         if(write(ring_fd, "", 1) < 0){
-            eprintf_exit(CAMIO_ERR_FILE_WRITE, "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
+            eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
         }
 
         ring = mmap( NULL, CAMIO_ISTREAM_RING_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, ring_fd, 0);
         if(unlikely(ring == MAP_FAILED)){
-            eprintf_exit(CAMIO_ERR_MMAP, "Could not memory map ring file \"%s\". Error=%s\n", descr->query, strerror(errno));
+            eprintf_exit("Could not memory map ring file \"%s\". Error=%s\n", descr->query, strerror(errno));
         }
 
         //Initialize the ring with 0
@@ -61,7 +61,7 @@ int camio_istream_ring_open(camio_istream_t* this, const camio_descr_t* descr ){
     }else{
         ring = mmap( NULL, CAMIO_ISTREAM_RING_SIZE, PROT_READ, MAP_SHARED, ring_fd, 0);
         if(unlikely(ring == MAP_FAILED)){
-            eprintf_exit(CAMIO_ERR_MMAP, "Could not memory map ring file \"%s\". Error=%s\n", descr->query, strerror(errno));
+            eprintf_exit( "Could not memory map ring file \"%s\". Error=%s\n", descr->query, strerror(errno));
         }
     }
 
@@ -72,7 +72,7 @@ int camio_istream_ring_open(camio_istream_t* this, const camio_descr_t* descr ){
     priv->curr = ring;
     priv->is_closed = 0;
 
-    return CAMIO_ERR_NONE;
+    return 0;
 }
 
 
@@ -102,7 +102,7 @@ static int prepare_next(camio_istream_ring_t* priv){
     }
 
     if( likely(curr_sync_count > priv->sync_counter)){
-        wprintf(CAMIO_ERR_UNKNOWN_OSTREAM, "Ring overflow. Catching up now. Dropping payloads from %lu to %lu\n", priv->sync_counter, curr_sync_count -1);
+        wprintf( "Ring overflow. Catching up now. Dropping payloads from %lu to %lu\n", priv->sync_counter, curr_sync_count -1);
         priv->sync_counter = curr_sync_count;
         const uint64_t data_len  = *((volatile uint64_t*)(priv->curr + CAMIO_ISTREAM_RING_SLOT_SIZE - 2* sizeof(uint64_t)));
         priv->read_size = data_len;
@@ -175,7 +175,7 @@ void camio_istream_ring_delete(camio_istream_t* this){
 
 camio_istream_t* camio_istream_ring_construct(camio_istream_ring_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_ring_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"ring stream supplied is null\n");
+        eprintf_exit("ring stream supplied is null\n");
     }
 
     //Initialize the local variables
@@ -210,7 +210,7 @@ camio_istream_t* camio_istream_ring_construct(camio_istream_ring_t* priv, const 
 camio_istream_t* camio_istream_ring_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_ring_params_t* params){
     camio_istream_ring_t* priv = malloc(sizeof(camio_istream_ring_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for ring istream creation\n");
+        eprintf_exit("No memory available for ring istream creation\n");
     }
     return camio_istream_ring_construct(priv, descr, clock, params);
 }

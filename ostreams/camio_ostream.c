@@ -47,7 +47,7 @@ camio_ostream_t* camio_ostream_new( char* description, camio_clock_t* clock, voi
             result = camio_ostream_netmap_new(&descr,clock, parameters);
     }
     else{
-        eprintf_exit(CAMIO_ERR_UNKNOWN_OSTREAM,"Could not create ostream from description \"%s\" \n", description);
+        eprintf_exit("Could not create ostream from description \"%s\" \n", description);
     }
 
     camio_descr_destroy(&descr);

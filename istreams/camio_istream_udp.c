@@ -31,16 +31,16 @@ int camio_istream_udp_open(camio_istream_t* this, const camio_descr_t* descr ){
     int udp_sock_fd;
 
     if(descr->opt_head){
-         eprintf_exit(CAMIO_ERR_UNKNOWN_OPT, "Option(s) supplied, but none expected\n");
+         eprintf_exit("but none expected\n");
      }
 
     if(!descr->query){
-        eprintf_exit(CAMIO_ERR_SOCKET, "No address supplied\n");
+        eprintf_exit( "No address supplied\n");
     }
 
     const size_t query_len = strlen(descr->query);
     if(query_len > 22){
-        eprintf_exit(CAMIO_ERR_SOCKET, "IP Address supplied is >22 chars \"%s\"\n", descr->query);
+        eprintf_exit( descr->query);
     }
 
     //Find the IP:port
@@ -57,20 +57,20 @@ int camio_istream_udp_open(camio_istream_t* this, const camio_descr_t* descr ){
 
 
     if(query_len > 22){
-        eprintf_exit(CAMIO_ERR_SOCKET, "IP Address supplied does not have a \":\" for the port number \"%s\"\n", descr->query);
+        eprintf_exit( descr->query);
     }
 
 
     priv->buffer = malloc(getpagesize() * 1024); //Allocate 4Mb for the buffer
     if(!priv->buffer){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "Failed to allocate message buffer\n");
+        eprintf_exit( "Failed to allocate message buffer\n");
     }
     priv->buffer_size = getpagesize() * 1024;
 
     /* Open the udp socket MAC/PHY layer output stage */
     udp_sock_fd = socket(AF_INET,SOCK_DGRAM,0);
     if (udp_sock_fd < 0 ){
-        eprintf_exit(CAMIO_ERR_SOCKET,"Could not open udp socket. Error = %s\n",strerror(errno));
+        eprintf_exit(strerror(errno));
     }
 
     struct sockaddr_in addr;
@@ -82,19 +82,19 @@ int camio_istream_udp_open(camio_istream_t* this, const camio_descr_t* descr ){
     printf("%X\n", addr.sin_addr.s_addr);
 
     if( bind(udp_sock_fd, (struct sockaddr *)&addr, sizeof(addr)) ){
-         eprintf_exit(CAMIO_ERR_BIND,"Could not bind raw socket. Error = %s\n",strerror(errno));
+         eprintf_exit(strerror(errno));
     }
 
     int RCVBUFF_SIZE = 512 * 1024 * 1024;
     if (setsockopt(udp_sock_fd, SOL_SOCKET, SO_RCVBUF, &RCVBUFF_SIZE, sizeof(RCVBUFF_SIZE)) < 0) {
-        eprintf_exit(CAMIO_ERR_SOCK_OPT,"Could not set socket option. Error = %s\n",strerror(errno));
+        eprintf_exit(strerror(errno));
     }
 
 
     priv->addr = addr;
     this->fd = udp_sock_fd;
     priv->is_closed = 0;
-    return CAMIO_ERR_NONE;
+    return 0;
 
 }
 
@@ -109,7 +109,7 @@ static void set_fd_blocking(int fd, int blocking){
     int flags = fcntl(fd, F_GETFL, 0);
 
     if (flags == -1){
-        eprintf_exit(CAMIO_ERR_FILE_FLAGS, "Could not get file flags\n");
+        eprintf_exit( "Could not get file flags\n");
     }
 
     if (blocking){
@@ -120,7 +120,7 @@ static void set_fd_blocking(int fd, int blocking){
     }
 
     if( fcntl(fd, F_SETFL, flags) == -1){
-        eprintf_exit(CAMIO_ERR_FILE_FLAGS, "Could not set file flags\n");
+        eprintf_exit( "Could not set file flags\n");
     }
 }
 
@@ -133,7 +133,7 @@ static int prepare_next(camio_istream_udp_t* priv, int blocking){
 
     int bytes = recv(priv->istream.fd,priv->buffer,priv->buffer_size, 0);
     if( bytes < 0){
-        eprintf_exit(CAMIO_ERR_RCV,"Could not receive from socket. Error = %s\n",strerror(errno));
+        eprintf_exit(strerror(errno));
     }
 
     priv->bytes_read = bytes;
@@ -191,7 +191,7 @@ void camio_istream_udp_delete(camio_istream_t* this){
 
 camio_istream_t* camio_istream_udp_construct(camio_istream_udp_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_udp_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"udp stream supplied is null\n");
+        eprintf_exit("udp stream supplied is null\n");
     }
     //Initialize the local variables
     priv->is_closed         = 1;
@@ -223,7 +223,7 @@ camio_istream_t* camio_istream_udp_construct(camio_istream_udp_t* priv, const ca
 camio_istream_t* camio_istream_udp_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_udp_params_t* params){
     camio_istream_udp_t* priv = malloc(sizeof(camio_istream_udp_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for udp istream creation\n");
+        eprintf_exit("No memory available for udp istream creation\n");
     }
     return camio_istream_udp_construct(priv, descr, clock, params);
 }

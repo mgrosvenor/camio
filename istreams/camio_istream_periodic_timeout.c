@@ -22,12 +22,12 @@ int camio_istream_periodic_timeout_open(camio_istream_t* this, const camio_descr
 
 
     if(opts->opt_head){
-        eprintf_exit(CAMIO_ERR_UNKNOWN_OPT, "Option(s) supplied, but none expected\n");
+        eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
     //Parse the time spec
     if(!opts->query){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "No timer specification supplied expected 'seconds.nanoseconds' format\n");
+        eprintf_exit( "No timer specification supplied expected 'seconds.nanoseconds' format\n");
     }
 
     uint64_t temp = 0;
@@ -53,16 +53,16 @@ int camio_istream_periodic_timeout_open(camio_istream_t* this, const camio_descr
     //Grab a file descriptor
     this->fd = timerfd_create(CLOCK_MONOTONIC,0);
     if(this->fd == -1){
-        eprintf_exit(CAMIO_ERR_FILE_OPEN, "Could not open monotonic clock");
+        eprintf_exit( "Could not open monotonic clock");
     }
 
     //set the periodic timeout
     if(timerfd_settime(this->fd,0,&new,NULL) < -1){
-        eprintf_exit(CAMIO_ERR_IOCTL, "Could not set monotonic clock", opts->query);
+        eprintf_exit( "Could not set monotonic clock", opts->query);
     }
 
     priv->is_closed = 0;
-    return CAMIO_ERR_NONE;
+    return 0;
 }
 
 
@@ -83,7 +83,7 @@ static void set_fd_blocking(int fd, int blocking){
     int flags = fcntl(fd, F_GETFL, 0);
 
     if (flags == -1){
-        eprintf_exit(CAMIO_ERR_FILE_FLAGS, "Could not get file flags\n");
+        eprintf_exit("Could not get file flags\n");
     }
 
     if (blocking){
@@ -94,7 +94,7 @@ static void set_fd_blocking(int fd, int blocking){
     }
 
     if( fcntl(fd, F_SETFL, flags) == -1){
-        eprintf_exit(CAMIO_ERR_FILE_FLAGS, "Could not set file flags\n");
+        eprintf_exit("Could not set file flags\n");
     }
 }
 
@@ -116,7 +116,7 @@ static int prepare_next(camio_istream_periodic_timeout_t* priv, int blocking){
         }
 
         //Uh ohh, some other error! Eek! Die!
-        eprintf_exit(CAMIO_ERR_FILE_READ, "Could not read periodic_timeout input error no=%i (%s)\n", errno, strerror(errno));
+        eprintf_exit( "Could not read periodic_timeout input error no=%i (%s)\n", errno, strerror(errno));
     }
 
     //Woot
@@ -173,7 +173,7 @@ void camio_istream_periodic_timeout_delete(camio_istream_t* this){
 
 camio_istream_t* camio_istream_periodic_timeout_construct(camio_istream_periodic_timeout_t* priv, const camio_descr_t* opts, camio_clock_t* clock, camio_istream_periodic_timeout_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"periodic_timeout stream supplied is null\n");
+        eprintf_exit("periodic_timeout stream supplied is null\n");
     }
     //Initialize the local variables
     priv->is_closed         = 1;
@@ -204,7 +204,7 @@ camio_istream_t* camio_istream_periodic_timeout_construct(camio_istream_periodic
 camio_istream_t* camio_istream_periodic_timeout_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_periodic_timeout_params_t* params){
     camio_istream_periodic_timeout_t* priv = malloc(sizeof(camio_istream_periodic_timeout_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for periodic_timeout istream creation\n");
+        eprintf_exit("No memory available for periodic_timeout istream creation\n");
     }
     return camio_istream_periodic_timeout_construct(priv, opts, clock, params);
 }

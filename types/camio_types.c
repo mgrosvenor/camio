@@ -13,7 +13,7 @@ void camio_##name##_list_add(void* listv, type item){                    \
     if(list->count == list->size){                                      \
         list->size *= 2;                                                \
         if(!realloc(list->items,list->size)){                           \
-            eprintf_exit(CAMIO_ERR_NULL_PTR, "No memory available for reallocation to size %lu\n", list->count);\
+            eprintf_exit( "No memory available for reallocation to size %lu\n", list->count);\
         }                                                               \
     }                                                                   \
                                                                         \
@@ -27,7 +27,7 @@ void camio_##name##_list_init(void* listv, uint64_t size){               \
     camio_##name##_list_t* list = (camio_##name##_list_t*)listv;          \
     list->size = size;                                                  \
     if(! (list->items = malloc(list->size * sizeof(type))) ) {          \
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "No memory available for initialization to size %lu\n", list->count);\
+        eprintf_exit( "No memory available for initialization to size %lu\n", list->count);\
     }                                                                   \
     list->count = 0;                                                    \
 }

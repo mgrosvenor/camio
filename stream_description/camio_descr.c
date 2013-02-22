@@ -19,7 +19,7 @@
 ///eg "udp:127.0.0.1,opt1=1,opt2=4"
 int camio_descr_parse(const char* descr_str, camio_descr_t* out_descr){
     if(!out_descr){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No output struct supplied\n");
+        eprintf_exit("No output struct supplied\n");
     }
 
     struct camio_opt_t* opt = NULL;
@@ -30,19 +30,19 @@ int camio_descr_parse(const char* descr_str, camio_descr_t* out_descr){
     const char* head_ptr = descr_str;
     const char* tail_ptr = descr_str;
     if(*head_ptr == '\0'){
-        eprintf_exit(CAMIO_ERR_INCOMPLETE_OPT, "Unexpected end of description string \"%s\"\n", descr_str);
+        eprintf_exit( "Unexpected end of description string \"%s\"\n", descr_str);
     }
     for(; *head_ptr != ':' &&  *head_ptr != ',' && *head_ptr != '\0'; head_ptr++){} //Find the ':' or ',' character
 
     char* protocol = calloc(1, head_ptr - tail_ptr + 1);
     if(!protocol){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "Could not allocate memory for protocol name\n");
+        eprintf_exit( "Could not allocate memory for protocol name\n");
     }
     out_descr->protocol = protocol;
     memcpy(out_descr->protocol,tail_ptr,head_ptr - tail_ptr);
 
     if(*head_ptr == '\0' ){
-        return CAMIO_ERR_NONE; //There is nothing left to parse
+        return 0; //There is nothing left to parse
     }
 
     //Get the query string
@@ -58,7 +58,7 @@ int camio_descr_parse(const char* descr_str, camio_descr_t* out_descr){
     for(; *head_ptr != ',' && *head_ptr != '\0'; head_ptr++){} //Find the ',' character
     char* query = calloc(1, head_ptr - tail_ptr + 1);
     if(!query){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "Could not allocate memory for query string\n");
+        eprintf_exit( "Could not allocate memory for query string\n");
     }
     out_descr->query = query;
     memcpy(out_descr->query,tail_ptr,head_ptr - tail_ptr);
@@ -77,12 +77,12 @@ parse_options:
         //Get the opt name
         for(; *head_ptr != '=' && *head_ptr != '\0'; head_ptr++){} //Find the '=' character
         if(*head_ptr == '\0'){
-            eprintf_exit(CAMIO_ERR_INCOMPLETE_OPT, "Unexpected end of option string \"%s\"\n", descr_str);
+            eprintf_exit( "Unexpected end of option string \"%s\"\n", descr_str);
         }
 
         opt = calloc(1, sizeof(struct camio_opt_t));
         if(!opt){
-            eprintf_exit(CAMIO_ERR_NULL_PTR, "Could not allocate memory for option\n");
+            eprintf_exit( "Could not allocate memory for option\n");
         }
         if(out_descr->opt_head == NULL){
             out_descr->opt_head = opt;
@@ -91,7 +91,7 @@ parse_options:
 
         char* opt_name = calloc(1, head_ptr - tail_ptr + 1);
         if(!opt_name){
-            eprintf_exit(CAMIO_ERR_NULL_PTR, "Could not allocate memory for option name\n");
+            eprintf_exit( "Could not allocate memory for option name\n");
         }
         opt->name = opt_name;
         memcpy(opt->name,tail_ptr,head_ptr - tail_ptr);
@@ -106,7 +106,7 @@ parse_options:
 
         char* opt_value = calloc(1, head_ptr - tail_ptr + 1);
         if(!opt_value){
-            eprintf_exit(CAMIO_ERR_NULL_PTR, "Could not allocate memory for option name\n");
+            eprintf_exit( "Could not allocate memory for option name\n");
         }
         opt->value = opt_value;
         memcpy(opt->value,tail_ptr,head_ptr - tail_ptr);
@@ -124,7 +124,7 @@ parse_options:
     if(opt)
         opt->next = NULL;
 
-    return CAMIO_ERR_NONE;
+    return 0;
 }
 
 

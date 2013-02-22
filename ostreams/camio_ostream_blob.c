@@ -22,16 +22,16 @@ int camio_ostream_blob_open(camio_ostream_t* this, const camio_descr_t* descr ){
     camio_ostream_blob_t* priv = this->priv;
 
     if(descr->opt_head){
-        eprintf_exit(CAMIO_ERR_UNKNOWN_OPT, "Option(s) supplied, but none expected\n");
+        eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
     if(!descr->query){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "No interface supplied\n");
+        eprintf_exit( "No interface supplied\n");
     }
 
     priv->buffer = malloc(CAMIO_OSTREAM_BLOB_INIT_BUFF_SIZE);
     if(!priv->buffer){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "Could not allocate output buffer\n");
+        eprintf_exit( "Could not allocate output buffer\n");
     }
     priv->buffer_size  = CAMIO_OSTREAM_BLOB_INIT_BUFF_SIZE;
 
@@ -40,21 +40,21 @@ int camio_ostream_blob_open(camio_ostream_t* this, const camio_descr_t* descr ){
         if(priv->params->fd > -1){
             this->fd = priv->params->fd;
             priv->is_closed = 0;
-            return CAMIO_ERR_NONE;
+            return 0;
         }
     }
 
     //Grab a file descriptor and rock on
     if(!descr->query){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "No filename supplied\n");
+        eprintf_exit( "No filename supplied\n");
     }
 
     this->fd = open(descr->query, O_WRONLY | O_CREAT | O_TRUNC, (mode_t)(0666));
     if(this->fd == -1){
-        eprintf_exit(CAMIO_ERR_FILE_OPEN, "Could not open file \"%s\"\n", descr->query);
+        eprintf_exit( "Could not open file \"%s\"\n", descr->query);
     }
     priv->is_closed = 0;
-    return CAMIO_ERR_NONE;
+    return 0;
 }
 
 void camio_ostream_blob_close(camio_ostream_t* this){
@@ -74,7 +74,7 @@ uint8_t* camio_ostream_blob_start_write(camio_ostream_t* this, size_t len ){
     if(unlikely(len > priv->buffer_size)){
         priv->buffer = realloc(priv->buffer, len);
         if(!priv->buffer){
-            eprintf_exit(CAMIO_ERR_NULL_PTR, "Could not grow line buffer\n");
+            eprintf_exit( "Could not grow line buffer\n");
         }
         priv->buffer_size = len;
     }
@@ -86,7 +86,7 @@ uint8_t* camio_ostream_blob_start_write(camio_ostream_t* this, size_t len ){
 //Returns non-zero if a call to start_write will be non-blocking
 int camio_ostream_blob_ready(camio_ostream_t* this){
     //Not implemented
-    eprintf_exit(CAMIO_ERR_NOT_IMPL, "\n");
+    eprintf_exit( "\n");
     return 0;
 }
 
@@ -141,7 +141,7 @@ int camio_ostream_blob_assign_write(camio_ostream_t* this, uint8_t* buffer, size
     camio_ostream_blob_t* priv = this->priv;
 
     if(unlikely(!buffer)){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"Assigned buffer is null.");
+        eprintf_exit("Assigned buffer is null.");
     }
 
     priv->assigned_buffer    = buffer;
@@ -157,7 +157,7 @@ int camio_ostream_blob_assign_write(camio_ostream_t* this, uint8_t* buffer, size
 
 camio_ostream_t* camio_ostream_blob_construct(camio_ostream_blob_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_blob_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"blob stream supplied is null\n");
+        eprintf_exit("blob stream supplied is null\n");
     }
     //Initialize the local variables
     priv->is_closed             = 1;
@@ -194,7 +194,7 @@ camio_ostream_t* camio_ostream_blob_construct(camio_ostream_blob_t* priv, const 
 camio_ostream_t* camio_ostream_blob_new( const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_blob_params_t* params){
     camio_ostream_blob_t* priv = malloc(sizeof(camio_ostream_blob_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for ostream blob creation\n");
+        eprintf_exit("No memory available for ostream blob creation\n");
     }
     return camio_ostream_blob_construct(priv, descr, clock, params);
 }

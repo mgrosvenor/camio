@@ -39,7 +39,7 @@ static void do_ioctl_flags(const char* ifname, size_t flags)
     //Get a control socket
     socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (socket_fd < 0) {
-        eprintf_exit(CAMIO_ERR_SOCKET, "Could not open device control socket\n");
+        eprintf_exit( "Could not open device control socket\n");
     }
 
     bzero(&ifr, sizeof(&ifr));
@@ -48,7 +48,7 @@ static void do_ioctl_flags(const char* ifname, size_t flags)
     ifr.ifr_flags = flags & 0xffff;
 
     if( ioctl(socket_fd, SIOCSIFFLAGS, &ifr) ){
-        eprintf_exit(CAMIO_ERR_IOCTL, "Could not set interface flags 0x%08x\n", flags);
+        eprintf_exit( "Could not set interface flags 0x%08x\n", flags);
     }
 
     close(socket_fd);
@@ -64,7 +64,7 @@ static void do_ioctl_ethtool(const char* ifname, int subcmd)
     //Get a control socket
     socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (socket_fd < 0) {
-        eprintf_exit(CAMIO_ERR_SOCKET, "Could not open device control socket\n");
+        eprintf_exit( "Could not open device control socket\n");
     }
 
     bzero(&ifr, sizeof(&ifr));
@@ -76,7 +76,7 @@ static void do_ioctl_ethtool(const char* ifname, int subcmd)
     ifr.ifr_data = (caddr_t)&eval;
 
     if( ioctl(socket_fd, SIOCETHTOOL, &ifr) ){
-        eprintf_exit(CAMIO_ERR_IOCTL, "Could not set ethtool value\n");
+        eprintf_exit("Could not set ethtool value\n");
     }
 
 }
@@ -87,18 +87,18 @@ int camio_istream_netmap_open(camio_istream_t* this, const camio_descr_t* descr 
     struct nmreq req;
 
     if(unlikely((size_t)descr->opt_head)){
-        eprintf_exit(CAMIO_ERR_UNKNOWN_OPT, "Option(s) supplied, but none expected\n");
+        eprintf_exit("Option(s) supplied, but none expected\n");
     }
 
     if(unlikely(!descr->query)){
-        eprintf_exit(CAMIO_ERR_NULL_PTR, "No device supplied\n");
+        eprintf_exit( "No device supplied\n");
     }
 
     //Open the netmap device
     netmap_fd = open("/dev/netmap", O_RDWR);
     printf("Opening %s\n", "/dev/netmap");
     if(unlikely(netmap_fd < 0)){
-        eprintf_exit(CAMIO_ERR_FILE_OPEN, "Could not open file \"%s\". Error=%s\n", "/dev/netmap", strerror(errno));
+        eprintf_exit( "Could not open file \"%s\". Error=%s\n", "/dev/netmap", strerror(errno));
     }
 
     //Request a specific interface
@@ -108,12 +108,12 @@ int camio_istream_netmap_open(camio_istream_t* this, const camio_descr_t* descr 
 	req.nr_ringid = 0; //All hw rings
 
 	if(ioctl(netmap_fd, NIOCGINFO, &req)){
-		eprintf_exit(CAMIO_ERR_IOCTL, "Could not get info on netmap interface %s\n", descr->query);
+		eprintf_exit( "Could not get info on netmap interface %s\n", descr->query);
 	}
 	priv->mem_size = req.nr_memsize;
 
 	if(ioctl(netmap_fd, NIOCREGIF, &req)){
-		eprintf_exit(CAMIO_ERR_IOCTL, "Could not register netmap interface %s\n", descr->query);
+		eprintf_exit( "Could not register netmap interface %s\n", descr->query);
 	}
 
     printf("Memsize  = %u\n"
@@ -139,7 +139,7 @@ int camio_istream_netmap_open(camio_istream_t* this, const camio_descr_t* descr 
 	else{
 	    priv->nm_mem = mmap(0, priv->mem_size, PROT_WRITE | PROT_READ, MAP_SHARED, netmap_fd, 0);
 	    if(unlikely(priv->nm_mem == MAP_FAILED)){
-	        eprintf_exit(CAMIO_ERR_MMAP, "Could not memory map blob file \"%s\". Error=%s\n", descr->query, strerror(errno));
+	        eprintf_exit( "Could not memory map blob file \"%s\". Error=%s\n", descr->query, strerror(errno));
 	    }
     }
 
@@ -166,7 +166,7 @@ int camio_istream_netmap_open(camio_istream_t* this, const camio_descr_t* descr 
 
     this->fd = netmap_fd;
     priv->is_closed = 0;
-    return CAMIO_ERR_NONE;
+    return 0;
 }
 
 
@@ -288,7 +288,7 @@ void camio_istream_netmap_delete(camio_istream_t* this){
 
 camio_istream_t* camio_istream_netmap_construct(camio_istream_netmap_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_netmap_params_t* params){
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"netmap stream supplied is null\n");
+        eprintf_exit("netmap stream supplied is null\n");
     }
 
     //Initialize the local variables
@@ -330,7 +330,7 @@ camio_istream_t* camio_istream_netmap_construct(camio_istream_netmap_t* priv, co
 camio_istream_t* camio_istream_netmap_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_netmap_params_t* params){
     camio_istream_netmap_t* priv = malloc(sizeof(camio_istream_netmap_t));
     if(!priv){
-        eprintf_exit(CAMIO_ERR_NULL_PTR,"No memory available for netmap istream creation\n");
+        eprintf_exit("No memory available for netmap istream creation\n");
     }
     return camio_istream_netmap_construct(priv, descr, clock, params);
 }

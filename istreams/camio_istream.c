@@ -68,7 +68,7 @@ camio_istream_t* camio_istream_new(const char* description, camio_clock_t* clock
     }
 //#endif /*CAMIO_ISTREAM_BUILD_WITH_DAG_*/
     else{
-        eprintf_exit(CAMIO_ERR_UNKNOWN_ISTREAM,"Could not create istream from description \"%s\" \n", description);
+        eprintf_exit("Could not create istream from description \"%s\" \n", description);
     }
 
     camio_descr_destroy(&descr);
