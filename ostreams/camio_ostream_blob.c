@@ -12,6 +12,7 @@
 
 #include "../utils/camio_util.h"
 #include "../errors/camio_errors.h"
+#include "../stream_description/camio_opt_parser.h"
 
 #include "camio_ostream_blob.h"
 
@@ -21,7 +22,7 @@
 int camio_ostream_blob_open(camio_ostream_t* this, const camio_descr_t* descr ){
     camio_ostream_blob_t* priv = this->priv;
 
-    if(descr->opt_head){
+    if(has_opts(descr->opt_head)){
         eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 

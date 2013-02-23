@@ -6,6 +6,8 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "camio_ostream.h"
 #include "../errors/camio_errors.h"
