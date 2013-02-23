@@ -26,6 +26,7 @@
 #include "../clocks/camio_time.h"
 #include "../netmap/netmap.h"
 #include "../netmap/netmap_user.h"
+#include "../stream_description/camio_opt_parser.h"
 
 #include "camio_ostream_netmap.h"
 
@@ -138,7 +139,7 @@ int camio_ostream_netmap_open(camio_ostream_t* this, const camio_descr_t* descr 
     int netmap_fd = -1;
     struct nmreq req;
 
-    if(unlikely((size_t)descr->opt_head)){
+    if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 

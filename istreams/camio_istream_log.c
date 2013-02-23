@@ -12,14 +12,16 @@
 
 #include "camio_istream_log.h"
 #include "../errors/camio_errors.h"
+#include "../stream_description/camio_opt_parser.h"
+#include "../utils/camio_util.h"
 
 #define CAMIO_ISTREAM_ISTREAM_LOG_BUFF_INIT 4096
 
 int camio_istream_log_open(camio_istream_t* this, const camio_descr_t* descr ){
     camio_istream_log_t* priv = this->priv;
 
-    if(descr->opt_head){
-        eprintf_exit("Option(s) supplied, but none expected\n");
+    if(unlikely(camio_descr_has_opts(descr->opt_head))){
+        eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
     priv->line_buffer = malloc(CAMIO_ISTREAM_ISTREAM_LOG_BUFF_INIT);

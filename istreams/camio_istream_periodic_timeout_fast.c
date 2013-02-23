@@ -18,6 +18,7 @@
 #include "camio_istream_periodic_timeout_fast.h"
 #include "../errors/camio_errors.h"
 #include "../utils/camio_util.h"
+#include "../stream_description/camio_opt_parser.h"
 
 
 static inline uint64_t timespec_to_ns(struct timespec* ts){
@@ -31,16 +32,16 @@ static inline uint64_t timespec_to_ns(struct timespec* ts){
 //}
 
 
-int camio_istream_periodic_timeout_fast_open(camio_istream_t* this, const camio_descr_t* opts ){
+int camio_istream_periodic_timeout_fast_open(camio_istream_t* this, const camio_descr_t* descr ){
     camio_istream_periodic_timeout_fast_t* priv = this->priv;
 
 
-    if(opts->opt_head){
+    if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
     //Parse the time spec
-    if(!opts->query){
+    if(!descr->query){
         eprintf_exit( "No timer specification supplied expected nanoseconds format\n");
     }
 
@@ -53,9 +54,9 @@ int camio_istream_periodic_timeout_fast_open(camio_istream_t* this, const camio_
 
     uint64_t temp = 0;
     size_t i = 0;
-    for(; opts->query[i] != '\0'; i++){
+    for(; descr->query[i] != '\0'; i++){
         temp *= 10;
-        temp += (opts->query[i] - '0');
+        temp += (descr->query[i] - '0');
     }
     priv->period = temp;
 

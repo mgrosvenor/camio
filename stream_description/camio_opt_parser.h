@@ -10,14 +10,14 @@
 
 #include "camio_descr.h"
 
-int has_opts(struct camio_opt_t* opts);
-struct camio_opt_t* has_opt(struct camio_opt_t* opts, const char* name);
+int camio_descr_has_opts(struct camio_opt_t* opts);
+struct camio_opt_t* camio_descr_has_opt(struct camio_opt_t* opts, const char* name);
 
-int get_opt_uint(struct camio_opt_t* opt, const char* name, uint64_t* value_out);
-int get_opt_int(struct camio_opt_t* opt, const char* name, int64_t* value_out);
-int get_opt_double(struct camio_opt_t* opt, const char* name, double* value_out);
-int get_opt_bool(struct camio_opt_t* opt, const char* name, int* value_out);
-int get_opt_string(struct camio_opt_t* opt, const char* name, char** value_out);
+int camio_descr_get_opt_uint(struct camio_opt_t* opt, uint64_t* value_out);
+int camio_descr_get_opt_int(struct camio_opt_t* opt, int64_t* value_out);
+int camio_descr_get_opt_double(struct camio_opt_t* opt, double* value_out);
+int camio_descr_get_opt_bool(struct camio_opt_t* opt, int* value_out);
+int camio_descr_get_opt_string(struct camio_opt_t* opt, char** value_out);
 
 
 #endif /* CAMIO_OPT_PARSER_H_ */

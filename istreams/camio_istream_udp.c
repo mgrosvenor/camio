@@ -21,6 +21,8 @@
 
 #include "camio_istream_udp.h"
 #include "../errors/camio_errors.h"
+#include "../stream_description/camio_opt_parser.h"
+#include "../utils/camio_util.h"
 
 
 
@@ -30,9 +32,9 @@ int camio_istream_udp_open(camio_istream_t* this, const camio_descr_t* descr ){
     char udp_port[6]; //UDP port is wost case, 5 bytes long (65536)
     int udp_sock_fd;
 
-    if(descr->opt_head){
-         eprintf_exit("but none expected\n");
-     }
+    if(unlikely(camio_descr_has_opts(descr->opt_head))){
+        eprintf_exit( "Option(s) supplied, but none expected\n");
+    }
 
     if(!descr->query){
         eprintf_exit( "No address supplied\n");

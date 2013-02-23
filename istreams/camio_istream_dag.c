@@ -22,13 +22,14 @@
 #include "../clocks/camio_time.h"
 
 #include "../dag/dagapi.h"
+#include "../stream_description/camio_opt_parser.h"
 
 int camio_istream_dag_open(camio_istream_t* this, const camio_descr_t* descr ){
     camio_istream_dag_t* priv = this->priv;
     int dag_fd = -1;
 
-    if(unlikely((size_t)descr->opt_head)){
-        eprintf_exit("Option(s) supplied, but none expected\n");
+    if(unlikely(camio_descr_has_opts(descr->opt_head))){
+        eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
     if(unlikely(!descr->query)){

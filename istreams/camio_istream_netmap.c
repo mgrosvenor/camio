@@ -28,6 +28,8 @@
 
 #include "../netmap/netmap.h"
 #include "../netmap/netmap_user.h"
+#include "../utils/camio_util.h"
+#include "../stream_description/camio_opt_parser.h"
 
 //Based on version in nm_util.c
 //This version is much faster as the socket fd and ifreq are cached at startup
@@ -86,8 +88,8 @@ int camio_istream_netmap_open(camio_istream_t* this, const camio_descr_t* descr 
     int netmap_fd = -1;
     struct nmreq req;
 
-    if(unlikely((size_t)descr->opt_head)){
-        eprintf_exit("Option(s) supplied, but none expected\n");
+    if(unlikely(camio_descr_has_opts(descr->opt_head))){
+        eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
     if(unlikely(!descr->query)){

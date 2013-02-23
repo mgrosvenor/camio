@@ -22,7 +22,7 @@
 int camio_ostream_blob_open(camio_ostream_t* this, const camio_descr_t* descr ){
     camio_ostream_blob_t* priv = this->priv;
 
-    if(has_opts(descr->opt_head)){
+    if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 

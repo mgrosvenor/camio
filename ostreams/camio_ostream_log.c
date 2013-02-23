@@ -12,6 +12,7 @@
 
 #include "../utils/camio_util.h"
 #include "../errors/camio_errors.h"
+#include "../stream_description/camio_opt_parser.h"
 
 #include "camio_ostream_log.h"
 
@@ -20,20 +21,13 @@
 int camio_ostream_log_open(camio_ostream_t* this, const camio_descr_t* descr ){
     camio_ostream_log_t* priv = this->priv;
 
-    if(unlikely((size_t)descr->opt_head)){
-        if(!strcmp("escape",descr->opt_head->name)){
-            if(descr->opt_head->value[0] == '1'){
-                priv->escape = 1;
-            }
-            else if(descr->opt_head->value[0] == '0'){
-                priv->escape = 0;
-            }
-            else{
-                eprintf_exit( "Unknown option value supplied \"s\". Valid values are \"1\" or \"0\"\n", descr->opt_head->value);
-            }
+    if(unlikely(camio_descr_has_opts(descr->opt_head))){
+        struct camio_opt_t*  opt;
+        if( (opt = camio_descr_has_opt(descr->opt_head,"escape")) ){
+            camio_descr_get_opt_bool(opt, &priv->escape);
         }
         else{
-            eprintf_exit( "Unknown option supplied \"s\". Valid options for this stream are: \"escape\"\n", descr->opt_head->name);
+            eprintf_exit( "Unknown option supplied \"s\". Valid options for this stream are: \"escape=<bool>\"\n", descr->opt_head->name);
         }
     }
 

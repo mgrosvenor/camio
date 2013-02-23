@@ -20,6 +20,8 @@
 
 #include "camio_istream_raw.h"
 #include "../errors/camio_errors.h"
+#include "../utils/camio_util.h"
+#include "../stream_description/camio_opt_parser.h"
 
 
 
@@ -28,7 +30,7 @@ int camio_istream_raw_open(camio_istream_t* this, const camio_descr_t* descr ){
     const char* iface = descr->query;
     int raw_sock_fd;
 
-    if(descr->opt_head){
+    if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 

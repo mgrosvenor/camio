@@ -13,33 +13,35 @@
 
 #include "camio_istream_periodic_timeout.h"
 #include "../errors/camio_errors.h"
+#include "../stream_description/camio_opt_parser.h"
+#include "../utils/camio_util.h"
 
 
-int camio_istream_periodic_timeout_open(camio_istream_t* this, const camio_descr_t* opts ){
+int camio_istream_periodic_timeout_open(camio_istream_t* this, const camio_descr_t* descr ){
     camio_istream_periodic_timeout_t* priv = this->priv;
     uint64_t seconds = 0;
     uint64_t nanoseconds = 0;
 
 
-    if(opts->opt_head){
+    if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
     //Parse the time spec
-    if(!opts->query){
+    if(!descr->query){
         eprintf_exit( "No timer specification supplied expected 'seconds.nanoseconds' format\n");
     }
 
     uint64_t temp = 0;
     size_t i = 0;
-    for(; opts->query[i] != '\0'; i++){
-        if(opts->query[i] == '.'){
+    for(; descr->query[i] != '\0'; i++){
+        if(descr->query[i] == '.'){
             seconds = temp;
             temp = 0;
             continue;
         }
         temp *= 10;
-        temp += (opts->query[i] - '0');
+        temp += (descr->query[i] - '0');
     }
     nanoseconds = temp;
 
@@ -58,7 +60,7 @@ int camio_istream_periodic_timeout_open(camio_istream_t* this, const camio_descr
 
     //set the periodic timeout
     if(timerfd_settime(this->fd,0,&new,NULL) < -1){
-        eprintf_exit( "Could not set monotonic clock", opts->query);
+        eprintf_exit( "Could not set monotonic clock", descr->query);
     }
 
     priv->is_closed = 0;
