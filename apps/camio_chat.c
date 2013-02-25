@@ -60,7 +60,7 @@ int main(int argc, char** argv){
 
     camio_selector_t* selector = camio_selector_new(options.selector,NULL,NULL);
     iostream = camio_iostream_new(options.stream,NULL,NULL);
-    selector->insert(selector,&iostream->rselector,IOSTREAM);
+    selector->insert(selector,&iostream->selector,IOSTREAM);
 
     if(options.client){
         stdinstr = camio_istream_new("std-in",NULL,NULL);
@@ -101,12 +101,6 @@ int main(int argc, char** argv){
         }
 
     }
-
-    term(0);
-
-    //Unreachable
-    return 0;
-
 
     term(0);
 

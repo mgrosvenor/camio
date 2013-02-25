@@ -145,7 +145,7 @@ void camio_iostream_tcp_close(camio_iostream_t* this){
 //
 //}
 
-int camio_iostream_tcp_ready(camio_iostream_t* this){
+int camio_iostream_tcp_rready(camio_iostream_t* this){
 //    camio_iostream_tcp_t* priv = this->priv;
 //    if(priv->bytes_read || priv->is_closed){
 //        return 1;
@@ -185,8 +185,8 @@ int camio_iostream_tcp_end_read(camio_iostream_t* this, uint8_t* free_buff){
 }
 
 
-int camio_iostream_tcp_rselector_ready(camio_selectable_t* stream){
-    camio_iostream_t* this = container_of(stream, camio_iostream_t,rselector);
+int camio_iostream_tcp_selector_ready(camio_selectable_t* stream){
+    camio_iostream_t* this = container_of(stream, camio_iostream_t,selector);
     return this->rready(this);
 }
 
@@ -196,6 +196,78 @@ void camio_iostream_tcp_delete(camio_iostream_t* this){
 //    camio_iostream_tcp_t* priv = this->priv;
 //    free(priv);
 }
+
+
+
+//Returns a pointer to a space of size len, ready for data
+uint8_t* camio_iostream_tcp_start_write(camio_iostream_t* this, size_t len ){
+//    camio_ostream_udp_t* priv = this->priv;
+//
+//    //Grow the buffer if it's not big enough
+//    if(len > priv->buffer_size){
+//        priv->buffer = realloc(priv->buffer, len);
+//        if(!priv->buffer){
+//            eprintf_exit( "Could not grow message buffer\n");
+//        }
+//        priv->buffer_size = len;
+//    }
+//
+//    return priv->buffer;
+    return 0;
+}
+
+//Returns non-zero if a call to start_write will be non-blocking
+int camio_iostream_tcp_wready(camio_iostream_t* this){
+//    //Not implemented
+//    eprintf_exit( "\n");
+    return 0;
+}
+
+
+//Commit the data to the buffer previously allocated
+//Len must be equal to or less than len called with start_write
+uint8_t* camio_iostream_tcp_end_write(camio_iostream_t* this, size_t len){
+//    camio_ostream_udp_t* priv = this->priv;
+//    int result = 0;
+//
+//    if(priv->assigned_buffer){
+//        result = sendto(this->fd,priv->assigned_buffer,len,0,(struct sockaddr*)&priv->addr, sizeof(priv->addr));
+//        if(result < 1){
+//            eprintf_exit( "Could not send on udp socket. Error = %s\n", strerror(errno));
+//        }
+//
+//        priv->assigned_buffer    = NULL;
+//        priv->assigned_buffer_sz = 0;
+//        return NULL;
+//    }
+//
+//    result = sendto(this->fd,priv->buffer,len,0,(struct sockaddr*)&priv->addr, sizeof(priv->addr));
+//    if(result < 1){
+//        eprintf_exit( "Could not send on udp socket. Error = %s\n", strerror(errno));
+//    }
+    return NULL;
+}
+
+//Is this stream capable of taking over another stream buffer
+int camio_iostream_tcp_can_assign_write(camio_iostream_t* this){
+    return 1;
+}
+
+//Assign the write buffer to the stream
+int camio_iostream_tcp_assign_write(camio_iostream_t* this, uint8_t* buffer, size_t len){
+//    camio_ostream_udp_t* priv = this->priv;
+//
+//    if(!buffer){
+//        eprintf_exit("Assigned buffer is null.");
+//    }
+//
+//    priv->assigned_buffer    = buffer;
+//    priv->assigned_buffer_sz = len;
+//
+    return 0;
+}
+
+
 
 /* ****************************************************
  * Construction
@@ -214,16 +286,24 @@ camio_iostream_t* camio_iostream_tcp_construct(camio_iostream_tcp_t* priv, const
 
 
     //Populate the function members
-    priv->iostream.priv            = priv; //Lets us access private members
-    priv->iostream.open            = camio_iostream_tcp_open;
-    priv->iostream.close           = camio_iostream_tcp_close;
-    priv->iostream.start_read      = camio_iostream_tcp_start_read;
-    priv->iostream.end_read        = camio_iostream_tcp_end_read;
-    priv->iostream.rready          = camio_iostream_tcp_ready;
-    priv->iostream.delete          = camio_iostream_tcp_delete;
-    priv->iostream.clock           = clock;
-    priv->iostream.rselector.fd    = -1;
-    priv->iostream.rselector.ready = camio_iostream_tcp_rselector_ready;
+    priv->iostream.priv             = priv; //Lets us access private members
+    priv->iostream.open             = camio_iostream_tcp_open;
+    priv->iostream.close            = camio_iostream_tcp_close;
+    priv->iostream.delete           = camio_iostream_tcp_delete;
+    priv->iostream.start_read       = camio_iostream_tcp_start_read;
+    priv->iostream.end_read         = camio_iostream_tcp_end_read;
+    priv->iostream.rready           = camio_iostream_tcp_rready;
+    priv->iostream.selector.ready   = camio_iostream_tcp_selector_ready;
+
+    priv->iostream.start_write      = camio_iostream_tcp_start_write;
+    priv->iostream.end_write        = camio_iostream_tcp_end_write;
+    priv->iostream.can_assign_write = camio_iostream_tcp_can_assign_write;
+    priv->iostream.assign_write     = camio_iostream_tcp_assign_write;
+    priv->iostream.wready           = camio_iostream_tcp_wready;
+
+    priv->iostream.clock            = clock;
+    priv->iostream.selector.fd      = -1;
+
 
     //Call open, because its the obvious thing to do now...
     priv->iostream.open(&priv->iostream, descr);
