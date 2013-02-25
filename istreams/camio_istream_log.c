@@ -34,7 +34,7 @@ int camio_istream_log_open(camio_istream_t* this, const camio_descr_t* descr ){
     //If we have a file descriptor from the outside world, then use it!
     if(priv->params){
         if(priv->params->fd > -1){
-            this->fd = priv->params->fd;
+            this->selector.fd = priv->params->fd;
             priv->is_closed = 0;
             return 0;
         }
@@ -45,8 +45,8 @@ int camio_istream_log_open(camio_istream_t* this, const camio_descr_t* descr ){
         eprintf_exit( "No filename supplied\n");
     }
 
-    this->fd = open(descr->query, O_RDONLY);
-    if(this->fd == -1){
+    this->selector.fd = open(descr->query, O_RDONLY);
+    if(this->selector.fd == -1){
         printf("\"%s\"",descr->query);
         eprintf_exit( "Could not open file \"%s\"\n", descr->query);
     }
@@ -57,7 +57,7 @@ int camio_istream_log_open(camio_istream_t* this, const camio_descr_t* descr ){
 
 void camio_istream_log_close(camio_istream_t* this){
     camio_istream_log_t* priv = this->priv;
-    close(this->fd);
+    close(this->selector.fd);
     priv->is_closed = 1;
 }
 
@@ -84,11 +84,11 @@ static inline void set_fd_blocking(int fd, int blocking){
 static int read_to_buff(camio_istream_log_t* priv, uint8_t* new_data_ptr, int blocking){
 
     //Set the file blocking mode as requested
-    set_fd_blocking(priv->istream.fd,blocking);
+    set_fd_blocking(priv->istream.selector.fd,blocking);
 
     //Read the data
     size_t amount = (priv->line_buffer + priv->line_buffer_size -1) - new_data_ptr;
-    int bytes = read(priv->istream.fd,new_data_ptr,amount);
+    int bytes = read(priv->istream.selector.fd,new_data_ptr,amount);
 
     //Was there some error
     if(bytes < 0){
@@ -280,6 +280,11 @@ int camio_istream_log_end_read(camio_istream_t* this, uint8_t* free_buff){
     return 0; //Always true for file I/O
 }
 
+int camio_istream_log_selector_ready(camio_selectable_t* stream){
+    camio_istream_t* this = container_of(stream, camio_istream_t,selector);
+    return this->ready(this);
+}
+
 
 void camio_istream_log_delete(camio_istream_t* this){
     this->close(this);
@@ -305,15 +310,17 @@ camio_istream_t* camio_istream_log_construct(camio_istream_log_t* priv, const ca
     priv->params            = params;
 
     //Populate the function members
-    priv->istream.priv          = priv; //Lets us access private members
-    priv->istream.open          = camio_istream_log_open;
-    priv->istream.close         = camio_istream_log_close;
-    priv->istream.start_read    = camio_istream_log_start_read;
-    priv->istream.end_read      = camio_istream_log_end_read;
-    priv->istream.ready         = camio_istream_log_ready;
-    priv->istream.delete        = camio_istream_log_delete;
-    priv->istream.clock         = clock;
-    priv->istream.fd            = -1;
+    priv->istream.priv           = priv; //Lets us access private members
+    priv->istream.open           = camio_istream_log_open;
+    priv->istream.close          = camio_istream_log_close;
+    priv->istream.start_read     = camio_istream_log_start_read;
+    priv->istream.end_read       = camio_istream_log_end_read;
+    priv->istream.ready          = camio_istream_log_ready;
+    priv->istream.delete         = camio_istream_log_delete;
+    priv->istream.clock          = clock;
+    priv->istream.selector.fd    = -1;
+    priv->istream.selector.ready = camio_istream_log_selector_ready;
+
     //Call open, because its the obvious thing to do now...
     priv->istream.open(&priv->istream, descr);
 

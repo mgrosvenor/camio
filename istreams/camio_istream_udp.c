@@ -94,7 +94,7 @@ int camio_istream_udp_open(camio_istream_t* this, const camio_descr_t* descr ){
 
 
     priv->addr = addr;
-    this->fd = udp_sock_fd;
+    this->selector.fd = udp_sock_fd;
     priv->is_closed = 0;
     return 0;
 
@@ -103,7 +103,7 @@ int camio_istream_udp_open(camio_istream_t* this, const camio_descr_t* descr ){
 
 void camio_istream_udp_close(camio_istream_t* this){
     camio_istream_udp_t* priv = this->priv;
-    close(this->fd);
+    close(this->selector.fd);
     free(priv->buffer);
 }
 
@@ -131,9 +131,9 @@ static int prepare_next(camio_istream_udp_t* priv, int blocking){
         return priv->bytes_read;
     }
 
-    set_fd_blocking(priv->istream.fd, blocking);
+    set_fd_blocking(priv->istream.selector.fd, blocking);
 
-    int bytes = recv(priv->istream.fd,priv->buffer,priv->buffer_size, 0);
+    int bytes = recv(priv->istream.selector.fd,priv->buffer,priv->buffer_size, 0);
     if( bytes < 0){
         eprintf_exit(strerror(errno));
     }
@@ -181,6 +181,12 @@ int camio_istream_udp_end_read(camio_istream_t* this, uint8_t* free_buff){
 }
 
 
+int camio_istream_udp_selector_ready(camio_selectable_t* stream){
+    camio_istream_t* this = container_of(stream, camio_istream_t,selector);
+    return this->ready(this);
+}
+
+
 void camio_istream_udp_delete(camio_istream_t* this){
     this->close(this);
     camio_istream_udp_t* priv = this->priv;
@@ -204,15 +210,16 @@ camio_istream_t* camio_istream_udp_construct(camio_istream_udp_t* priv, const ca
 
 
     //Populate the function members
-    priv->istream.priv          = priv; //Lets us access private members
-    priv->istream.open          = camio_istream_udp_open;
-    priv->istream.close         = camio_istream_udp_close;
-    priv->istream.start_read    = camio_istream_udp_start_read;
-    priv->istream.end_read      = camio_istream_udp_end_read;
-    priv->istream.ready         = camio_istream_udp_ready;
-    priv->istream.delete        = camio_istream_udp_delete;
-    priv->istream.clock         = clock;
-    priv->istream.fd            = -1;
+    priv->istream.priv           = priv; //Lets us access private members
+    priv->istream.open           = camio_istream_udp_open;
+    priv->istream.close          = camio_istream_udp_close;
+    priv->istream.start_read     = camio_istream_udp_start_read;
+    priv->istream.end_read       = camio_istream_udp_end_read;
+    priv->istream.ready          = camio_istream_udp_ready;
+    priv->istream.delete         = camio_istream_udp_delete;
+    priv->istream.clock          = clock;
+    priv->istream.selector.fd    = -1;
+    priv->istream.selector.ready = camio_istream_udp_selector_ready;
 
     //Call open, because its the obvious thing to do now...
     priv->istream.open(&priv->istream, descr);

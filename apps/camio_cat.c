@@ -8,12 +8,12 @@
 #include <memory.h>
 #include <signal.h>
 
-#include "istreams/camio_istream_log.h"
-#include "ostreams/camio_ostream_log.h"
-#include "prog_options/camio_prog_options.h"
-#include "types/camio_types.h"
+#include "../istreams/camio_istream.h"
+#include "../ostreams/camio_ostream.h"
+#include "../prog_options/camio_prog_options.h"
+#include "../types/camio_types.h"
 
-#include "utils/camio_util.h"
+#include "../utils/camio_util.h"
 
 camio_list_t(istream) istreams = {};
 camio_list_t(ostream) ostreams = {};
@@ -57,7 +57,7 @@ int main(int argc, char** argv){
     int i;
     for(i = 0; i < options.inputs.count; i++){
         camio_istream_t* in = camio_istream_new(options.inputs.items[i], clock, NULL);
-        selector->insert(selector,in,i);
+        selector->insert(selector,&in->selector,i);
         camio_list_add(istream,&istreams,in);
     }
 

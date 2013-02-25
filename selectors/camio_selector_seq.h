@@ -21,7 +21,7 @@ typedef struct {
 
 
 typedef struct {
-    camio_istream_t* istream;
+    camio_selectable_t* stream;
     size_t index;
 } camio_selector_seq_stream_t;
 

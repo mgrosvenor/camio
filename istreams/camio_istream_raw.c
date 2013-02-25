@@ -83,7 +83,7 @@ int camio_istream_raw_open(camio_istream_t* this, const camio_descr_t* descr ){
         eprintf_exit("Could not set socket option. Error = %s\n",strerror(errno));
     }
 
-    this->fd = raw_sock_fd;
+    this->selector.fd = raw_sock_fd;
     priv->is_closed = 0;
     return 0;
 }
@@ -91,7 +91,7 @@ int camio_istream_raw_open(camio_istream_t* this, const camio_descr_t* descr ){
 
 void camio_istream_raw_close(camio_istream_t* this){
     camio_istream_raw_t* priv = this->priv;
-    close(this->fd);
+    close(this->selector.fd);
     free(priv->buffer);
 }
 
@@ -119,9 +119,9 @@ static int prepare_next(camio_istream_raw_t* priv, int blocking){
         return priv->bytes_read;
     }
 
-    set_fd_blocking(priv->istream.fd, blocking);
+    set_fd_blocking(priv->istream.selector.fd, blocking);
 
-    int bytes = recv(priv->istream.fd,priv->buffer,priv->buffer_size, 0);
+    int bytes = recv(priv->istream.selector.fd,priv->buffer,priv->buffer_size, 0);
     if( bytes < 0){
         eprintf_exit("Could not receive from socket. Error = %s\n",strerror(errno));
     }
@@ -169,6 +169,11 @@ int camio_istream_raw_end_read(camio_istream_t* this, uint8_t* free_buff){
 }
 
 
+int camio_istream_raw_selector_ready(camio_selectable_t* stream){
+    camio_istream_t* this = container_of(stream, camio_istream_t,selector);
+    return this->ready(this);
+}
+
 void camio_istream_raw_delete(camio_istream_t* this){
     this->close(this);
     camio_istream_raw_t* priv = this->priv;
@@ -192,15 +197,16 @@ camio_istream_t* camio_istream_raw_construct(camio_istream_raw_t* priv, const ca
 
 
     //Populate the function members
-    priv->istream.priv          = priv; //Lets us access private members
-    priv->istream.open          = camio_istream_raw_open;
-    priv->istream.close         = camio_istream_raw_close;
-    priv->istream.start_read    = camio_istream_raw_start_read;
-    priv->istream.end_read      = camio_istream_raw_end_read;
-    priv->istream.ready         = camio_istream_raw_ready;
-    priv->istream.delete        = camio_istream_raw_delete;
-    priv->istream.clock         = clock;
-    priv->istream.fd            = -1;
+    priv->istream.priv           = priv; //Lets us access private members
+    priv->istream.open           = camio_istream_raw_open;
+    priv->istream.close          = camio_istream_raw_close;
+    priv->istream.start_read     = camio_istream_raw_start_read;
+    priv->istream.end_read       = camio_istream_raw_end_read;
+    priv->istream.ready          = camio_istream_raw_ready;
+    priv->istream.delete         = camio_istream_raw_delete;
+    priv->istream.clock          = clock;
+    priv->istream.selector.fd    = -1;
+    priv->istream.selector.ready = camio_istream_raw_selector_ready;
 
     //Call open, because its the obvious thing to do now...
     priv->istream.open(&priv->istream, descr);

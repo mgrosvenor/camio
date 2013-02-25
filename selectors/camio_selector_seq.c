@@ -20,10 +20,10 @@ int camio_selector_seq_init(camio_selector_t* this){
 }
 
 //Insert an istream at index specified
-int camio_selector_seq_insert(camio_selector_t* this, camio_istream_t* istream, size_t index){
+int camio_selector_seq_insert(camio_selector_t* this, camio_selectable_t* stream, size_t index){
     camio_selector_seq_t* priv = this->priv;
-    if(!istream){
-        eprintf_exit("No istream supplied\n");
+    if(!stream){
+        eprintf_exit("No stream supplied\n");
     }
 
     if(priv->stream_count >= CAMIO_SELECTOR_SEQ_MAX_STREAMS){
@@ -32,7 +32,7 @@ int camio_selector_seq_insert(camio_selector_t* this, camio_istream_t* istream, 
     }
 
     priv->streams[priv->stream_count].index = index;
-    priv->streams[priv->stream_count].istream = istream;
+    priv->streams[priv->stream_count].stream = stream;
     priv->stream_count++;
     priv->stream_avail++;
 
@@ -54,7 +54,7 @@ int camio_selector_seq_remove(camio_selector_t* this, size_t index){
     size_t i = 0;
       for(i = 0; i < CAMIO_SELECTOR_SEQ_MAX_STREAMS; i++ ){
           if(priv->streams[i].index == index){
-              priv->streams[i].istream = NULL;
+              priv->streams[i].stream = NULL;
               priv->stream_avail--;
               return 0;
           }
@@ -77,8 +77,8 @@ size_t camio_selector_seq_select(camio_selector_t* this){
     size_t i = 0; //Start from zero every time to ensure starvation
     while(1){
         for(; i < priv->stream_count; i++){
-            if(likely(priv->streams[i].istream != NULL)){
-                if(likely(priv->streams[i].istream->ready(priv->streams[i].istream))){
+            if(likely(priv->streams[i].stream != NULL)){
+                if(likely(priv->streams[i].stream->ready(priv->streams[i].stream))){
                     return priv->streams[i].index;
                 }
             }

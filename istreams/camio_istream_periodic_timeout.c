@@ -53,13 +53,13 @@ int camio_istream_periodic_timeout_open(camio_istream_t* this, const camio_descr
     struct itimerspec new = { .it_value = { seconds , nanoseconds }, .it_interval = { seconds , nanoseconds } };
 
     //Grab a file descriptor
-    this->fd = timerfd_create(CLOCK_MONOTONIC,0);
-    if(this->fd == -1){
+    this->selector.fd = timerfd_create(CLOCK_MONOTONIC,0);
+    if(this->selector.fd == -1){
         eprintf_exit( "Could not open monotonic clock");
     }
 
     //set the periodic timeout
-    if(timerfd_settime(this->fd,0,&new,NULL) < -1){
+    if(timerfd_settime(this->selector.fd,0,&new,NULL) < -1){
         eprintf_exit( "Could not set monotonic clock", descr->query);
     }
 
@@ -73,10 +73,10 @@ void camio_istream_periodic_timeout_close(camio_istream_t* this){
 
     //Stop the timer
     struct itimerspec new = { .it_value = {0,0}, .it_interval = {0 , 0 } };
-    timerfd_settime(this->fd,0,&new,NULL);
+    timerfd_settime(this->selector.fd,0,&new,NULL);
 
     //Close the file
-    close(this->fd);
+    close(this->selector.fd);
     priv->is_closed = 1;
 }
 
@@ -104,12 +104,12 @@ static void set_fd_blocking(int fd, int blocking){
 static int prepare_next(camio_istream_periodic_timeout_t* priv, int blocking){
     //Set the file blocking mode as requested
     if(blocking != priv->blocking){
-        set_fd_blocking(priv->istream.fd,blocking);
+        set_fd_blocking(priv->istream.selector.fd,blocking);
         priv->blocking = blocking;
     }
 
     //Read the data
-    int bytes = read(priv->istream.fd,&priv->expiries,8);
+    int bytes = read(priv->istream.selector.fd,&priv->expiries,8);
 
     //Was there some error
     if(bytes < 0){
@@ -162,6 +162,11 @@ int camio_istream_periodic_timeout_end_read(camio_istream_t* this, uint8_t* free
     return 0;
 }
 
+int camio_istream_periodic_timeout_selector_ready(camio_selectable_t* stream){
+    camio_istream_t* this = container_of(stream, camio_istream_t,selector);
+    return this->ready(this);
+}
+
 
 void camio_istream_periodic_timeout_delete(camio_istream_t* this){
     this->close(this);
@@ -185,15 +190,16 @@ camio_istream_t* camio_istream_periodic_timeout_construct(camio_istream_periodic
     priv->params            = params;
 
     //Populate the function members
-    priv->istream.priv          = priv; //Lets us access private members
-    priv->istream.open          = camio_istream_periodic_timeout_open;
-    priv->istream.close         = camio_istream_periodic_timeout_close;
-    priv->istream.start_read    = camio_istream_periodic_timeout_start_read;
-    priv->istream.end_read      = camio_istream_periodic_timeout_end_read;
-    priv->istream.ready         = camio_istream_periodic_timeout_ready;
-    priv->istream.delete        = camio_istream_periodic_timeout_delete;
-    priv->istream.clock         = clock;
-    priv->istream.fd            = -1;
+    priv->istream.priv           = priv; //Lets us access private members
+    priv->istream.open           = camio_istream_periodic_timeout_open;
+    priv->istream.close          = camio_istream_periodic_timeout_close;
+    priv->istream.start_read     = camio_istream_periodic_timeout_start_read;
+    priv->istream.end_read       = camio_istream_periodic_timeout_end_read;
+    priv->istream.ready          = camio_istream_periodic_timeout_ready;
+    priv->istream.delete         = camio_istream_periodic_timeout_delete;
+    priv->istream.clock          = clock;
+    priv->istream.selector.fd    = -1;
+    priv->istream.selector.ready = camio_istream_periodic_timeout_selector_ready;
 
     //Call open, because its the obvious thing to do now...
     priv->istream.open(&priv->istream, opts);

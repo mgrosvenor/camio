@@ -1,6 +1,8 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
+ * A version of camio-cat that builds against libcamio.a using /include/camio directory.
+ *
  */
 
 #include <stdio.h>

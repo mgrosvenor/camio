@@ -166,7 +166,7 @@ int camio_istream_netmap_open(camio_istream_t* this, const camio_descr_t* descr 
     struct netmap_ring *rxring = NETMAP_RXRING(priv->nifp, priv->begin);
     priv->packet_buff_bottom = ((uint8_t *)(rxring) + (rxring)->buf_ofs);
 
-    this->fd = netmap_fd;
+    this->selector.fd = netmap_fd;
     priv->is_closed = 0;
     return 0;
 }
@@ -181,7 +181,7 @@ void camio_istream_netmap_close(camio_istream_t* this){
 //        priv->nm_mem   = NULL;
 //        priv->mem_size = 0;
 //    }
-    ioctl(this->fd, NIOCUNREGIF, NULL);
+    ioctl(this->selector.fd, NIOCUNREGIF, NULL);
     //close(this->fd);
 }
 
@@ -210,7 +210,7 @@ static int prepare_next(camio_istream_t* this){
     }
 
     //We've run out, call this and hope it's better next time
-    ioctl(this->fd, NIOCRXSYNC, NULL);
+    ioctl(this->selector.fd, NIOCRXSYNC, NULL);
     return 0 ;
 }
 
@@ -239,7 +239,7 @@ int camio_istream_netmap_start_read(camio_istream_t* this, uint8_t** out){
         while(!prepare_next(this)){
             //There are no packets, call syncronise
             struct pollfd fds[1];
-            fds[0].fd = this->fd;
+            fds[0].fd = this->selector.fd;
             fds[0].events = (POLLIN);
             //printf("Polling for packets...\n");
             if( poll(fds, 1, -1) < 0){
@@ -265,7 +265,7 @@ int camio_istream_netmap_end_read(camio_istream_t* this,uint8_t* free_buff){
         
         //Make sure the free buffers get back
         if(count && count % 512 == 0){        
-            ioctl(this->fd, NIOCRXSYNC, NULL);
+            ioctl(this->selector.fd, NIOCRXSYNC, NULL);
             count++;
         }
     }
@@ -277,6 +277,11 @@ int camio_istream_netmap_end_read(camio_istream_t* this,uint8_t* free_buff){
     return 0;
 }
 
+
+int camio_istream_netmap_selector_ready(camio_selectable_t* stream){
+    camio_istream_t* this = container_of(stream, camio_istream_t,selector);
+    return this->ready(this);
+}
 
 void camio_istream_netmap_delete(camio_istream_t* this){
     this->close(this);
@@ -311,15 +316,16 @@ camio_istream_t* camio_istream_netmap_construct(camio_istream_netmap_t* priv, co
 
 
     //Populate the function members
-    priv->istream.priv          = priv; //Lets us access private members
-    priv->istream.open          = camio_istream_netmap_open;
-    priv->istream.close         = camio_istream_netmap_close;
-    priv->istream.start_read    = camio_istream_netmap_start_read;
-    priv->istream.end_read      = camio_istream_netmap_end_read;
-    priv->istream.ready         = camio_istream_netmap_ready;
-    priv->istream.delete        = camio_istream_netmap_delete;
-    priv->istream.clock         = clock;
-    priv->istream.fd            = -1;
+    priv->istream.priv           = priv; //Lets us access private members
+    priv->istream.open           = camio_istream_netmap_open;
+    priv->istream.close          = camio_istream_netmap_close;
+    priv->istream.start_read     = camio_istream_netmap_start_read;
+    priv->istream.end_read       = camio_istream_netmap_end_read;
+    priv->istream.ready          = camio_istream_netmap_ready;
+    priv->istream.delete         = camio_istream_netmap_delete;
+    priv->istream.clock          = clock;
+    priv->istream.selector.fd    = -1;
+    priv->istream.selector.ready = camio_istream_netmap_selector_ready;
 
     //Call open, because its the obvious thing to do now...
     priv->istream.open(&priv->istream, descr);

@@ -22,10 +22,10 @@ int camio_selector_poll_init(camio_selector_t* this){
 }
 
 //Insert an istream at index specified
-int camio_selector_poll_insert(camio_selector_t* this, camio_istream_t* istream, size_t index){
+int camio_selector_poll_insert(camio_selector_t* this, camio_selectable_t* stream, size_t index){
     camio_selector_poll_t* priv = this->priv;
-    if(!istream){
-        eprintf_exit("No istream supplied\n");
+    if(!stream){
+        eprintf_exit("No stream supplied\n");
     }
 
     if(priv->stream_count >= CAMIO_SELECTOR_POLL_MAX_STREAMS){
@@ -34,8 +34,8 @@ int camio_selector_poll_insert(camio_selector_t* this, camio_istream_t* istream,
     }
 
     priv->streams[priv->stream_count].index = index;
-    priv->streams[priv->stream_count].istream = istream;
-    priv->fds[priv->stream_count].fd          = istream->fd;
+    priv->streams[priv->stream_count].stream = stream;
+    priv->fds[priv->stream_count].fd          = stream->fd;
     priv->fds[priv->stream_count].events      = POLLIN;
 
     priv->stream_count++;
@@ -60,7 +60,7 @@ int camio_selector_poll_remove(camio_selector_t* this, size_t index){
     size_t i = 0;
       for(i = 0; i < CAMIO_SELECTOR_POLL_MAX_STREAMS; i++ ){
           if(priv->streams[i].index == index){
-              priv->streams[i].istream = NULL;
+              priv->streams[i].stream = NULL;
               priv->fds[i].fd          = -1;
               priv->stream_avail--;
               return 0;
@@ -88,7 +88,7 @@ size_t camio_selector_poll_select(camio_selector_t* this){
 
     size_t i = (priv->last + 1) % priv->stream_count; //Start from the next stream to avoid starvation
     for(; i < priv->stream_count; i++){
-        if(likely(priv->streams[i].istream != NULL && priv->fds[i].fd != -1 && (priv->fds[i].revents & POLLIN) )){
+        if(likely(priv->streams[i].stream != NULL && priv->fds[i].fd != -1 && (priv->fds[i].revents & POLLIN) )){
             priv->last = i;
             return priv->streams[i].index;
         }

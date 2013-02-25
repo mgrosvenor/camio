@@ -57,7 +57,7 @@ int camio_istream_dag_open(camio_istream_t* this, const camio_descr_t* descr ){
     timerclear(&poll);
     dag_setpollparams(0,&maxwait,&poll);
 
-    this->fd = dag_fd;
+    this->selector.fd = dag_fd;
     priv->is_closed = 0;
     return 0;
 }
@@ -65,9 +65,9 @@ int camio_istream_dag_open(camio_istream_t* this, const camio_descr_t* descr ){
 
 void camio_istream_dag_close(camio_istream_t* this){
     camio_istream_dag_t* priv = this->priv;
-    dag_stop_stream(this->fd, priv->dag_stream);
-    dag_detach_stream(this->fd, priv->dag_stream);
-    dag_close(this->fd);
+    dag_stop_stream(this->selector.fd, priv->dag_stream);
+    dag_detach_stream(this->selector.fd, priv->dag_stream);
+    dag_close(this->selector.fd);
     priv->is_closed = 1;
 }
 
@@ -83,7 +83,7 @@ static int prepare_next(camio_istream_t* this){
     }
 
     //Is there new data?
-    dag_record_t* data = (dag_record_t*)dag_rx_stream_next_record(this->fd, priv->dag_stream);
+    dag_record_t* data = (dag_record_t*)dag_rx_stream_next_record(this->selector.fd, priv->dag_stream);
     if( likely((size_t)data)){
         //Is this an ERF? Or did something wierd happen?
         if ( unlikely(data->type == 0)){
@@ -146,6 +146,12 @@ int camio_istream_dag_end_read(camio_istream_t* this, uint8_t* free_buff){
 }
 
 
+int camio_istream_dag_selector_ready(camio_selectable_t* stream){
+    camio_istream_t* this = container_of(stream, camio_istream_t,selector);
+    return this->ready(this);
+}
+
+
 void camio_istream_dag_delete(camio_istream_t* this){
     this->close(this);
     camio_istream_dag_t* priv = this->priv;
@@ -169,15 +175,16 @@ camio_istream_t* camio_istream_dag_construct(camio_istream_dag_t* priv, const ca
     priv->params            = params;
 
     //Populate the function members
-    priv->istream.priv          = priv; //Lets us access private members
-    priv->istream.open          = camio_istream_dag_open;
-    priv->istream.close         = camio_istream_dag_close;
-    priv->istream.start_read    = camio_istream_dag_start_read;
-    priv->istream.end_read      = camio_istream_dag_end_read;
-    priv->istream.ready         = camio_istream_dag_ready;
-    priv->istream.delete        = camio_istream_dag_delete;
-    priv->istream.clock         = clock;
-    priv->istream.fd            = -1;
+    priv->istream.priv           = priv; //Lets us access private members
+    priv->istream.open           = camio_istream_dag_open;
+    priv->istream.close          = camio_istream_dag_close;
+    priv->istream.start_read     = camio_istream_dag_start_read;
+    priv->istream.end_read       = camio_istream_dag_end_read;
+    priv->istream.ready          = camio_istream_dag_ready;
+    priv->istream.delete         = camio_istream_dag_delete;
+    priv->istream.clock          = clock;
+    priv->istream.selector.fd    = -1;
+    priv->istream.selector.ready = camio_istream_dag_selector_ready;
 
     //Call open, because its the obvious thing to do now...
     priv->istream.open(&priv->istream, descr);

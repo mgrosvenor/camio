@@ -12,6 +12,7 @@
 
 #include "../stream_description/camio_descr.h"
 #include "../clocks/camio_clock.h"
+#include "../selectors/camio_selector.h"
 
 struct camio_istream;
 typedef struct camio_istream camio_istream_t;
@@ -24,7 +25,7 @@ struct camio_istream{
      int (*end_read)(camio_istream_t* this, uint8_t* free_buff);     //Returns 0 if the contents of out_bytes have NOT changed since the call to start_read. For buffers this may fail, if this is the case, data read in start_read maybe corrupt.
      void(*delete)(camio_istream_t* this);                        //Closes the stream and deletes the memory used
      camio_clock_t* clock;
-     int fd;                                                     //Expose the file descriptor to the outside world, useful for selectors
+     camio_selectable_t selector;
      void* priv;
 };
 

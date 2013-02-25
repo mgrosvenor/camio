@@ -30,8 +30,8 @@ int camio_istream_blob_open(camio_istream_t* this, const camio_descr_t* descr ){
         eprintf_exit("No filename supplied\n");
     }
 
-    this->fd = open(descr->query, O_RDONLY);
-    if(unlikely(this->fd < 0)){
+    this->selector.fd = open(descr->query, O_RDONLY);
+    if(unlikely(this->selector.fd < 0)){
         eprintf_exit("Could not open file \"%s\". Error=%s\n", descr->query, strerror(errno));
     }
 
@@ -43,7 +43,7 @@ int camio_istream_blob_open(camio_istream_t* this, const camio_descr_t* descr ){
     if(priv->blob_size)
     {
         //Map the whole thing into memory
-        priv->blob = mmap( NULL, priv->blob_size, PROT_READ, MAP_SHARED, this->fd, 0);
+        priv->blob = mmap( NULL, priv->blob_size, PROT_READ, MAP_SHARED, this->selector.fd, 0);
         if(unlikely(priv->blob == MAP_FAILED)){
             eprintf_exit("Could not memory map blob file \"%s\". Error=%s\n", descr->query, strerror(errno));
         }
@@ -58,7 +58,7 @@ int camio_istream_blob_open(camio_istream_t* this, const camio_descr_t* descr ){
 void camio_istream_blob_close(camio_istream_t* this){
     camio_istream_blob_t* priv = this->priv;
     munmap((void*)priv->blob, priv->blob_size);
-    close(this->fd);
+    close(this->selector.fd);
     priv->is_closed = 1;
 }
 
@@ -108,6 +108,11 @@ int camio_istream_blob_end_read(camio_istream_t* this, uint8_t* free_buff){
 }
 
 
+int camio_istream_blob_selector_ready(camio_selectable_t* stream){
+    camio_istream_t* this = container_of(stream, camio_istream_t,selector);
+    return this->ready(this);
+}
+
 
 void camio_istream_blob_delete(camio_istream_t* this){
     this->close(this);
@@ -133,15 +138,16 @@ camio_istream_t* camio_istream_blob_construct(camio_istream_blob_t* priv, const 
     priv->params            = params;
 
     //Populate the function members
-    priv->istream.priv          = priv; //Lets us access private members
-    priv->istream.open          = camio_istream_blob_open;
-    priv->istream.close         = camio_istream_blob_close;
-    priv->istream.start_read    = camio_istream_blob_start_read;
-    priv->istream.end_read      = camio_istream_blob_end_read;
-    priv->istream.ready         = camio_istream_blob_ready;
-    priv->istream.delete        = camio_istream_blob_delete;
-    priv->istream.clock         = clock;
-    priv->istream.fd            = -1;
+    priv->istream.priv           = priv; //Lets us access private members
+    priv->istream.open           = camio_istream_blob_open;
+    priv->istream.close          = camio_istream_blob_close;
+    priv->istream.start_read     = camio_istream_blob_start_read;
+    priv->istream.end_read       = camio_istream_blob_end_read;
+    priv->istream.ready          = camio_istream_blob_ready;
+    priv->istream.delete         = camio_istream_blob_delete;
+    priv->istream.clock          = clock;
+    priv->istream.selector.fd    = -1;
+    priv->istream.selector.ready = camio_istream_blob_selector_ready;
 
     //Call open, because its the obvious thing to do now...
     priv->istream.open(&priv->istream, descr);

@@ -68,7 +68,7 @@ int camio_istream_periodic_timeout_fast_open(camio_istream_t* this, const camio_
 
 
     //Set the file descriptor
-    this->fd = -1;
+    this->selector.fd = -1;
 
     priv->is_closed = 0;
     return 0;
@@ -135,6 +135,11 @@ int camio_istream_periodic_timeout_fast_end_read(camio_istream_t* this, uint8_t*
 }
 
 
+int camio_istream_periodic_timeout_fast_selector_ready(camio_selectable_t* stream){
+    camio_istream_t* this = container_of(stream, camio_istream_t,selector);
+    return this->ready(this);
+}
+
 void camio_istream_periodic_timeout_fast_delete(camio_istream_t* this){
     this->close(this);
     camio_istream_periodic_timeout_fast_t* priv = this->priv;
@@ -157,15 +162,16 @@ camio_istream_t* camio_istream_periodic_timeout_fast_construct(camio_istream_per
     priv->params            = params;
 
     //Populate the function members
-    priv->istream.priv          = priv; //Lets us access private members
-    priv->istream.open          = camio_istream_periodic_timeout_fast_open;
-    priv->istream.close         = camio_istream_periodic_timeout_fast_close;
-    priv->istream.start_read    = camio_istream_periodic_timeout_fast_start_read;
-    priv->istream.end_read      = camio_istream_periodic_timeout_fast_end_read;
-    priv->istream.ready         = camio_istream_periodic_timeout_fast_ready;
-    priv->istream.delete        = camio_istream_periodic_timeout_fast_delete;
-    priv->istream.clock         = clock;
-    priv->istream.fd            = -1;
+    priv->istream.priv           = priv; //Lets us access private members
+    priv->istream.open           = camio_istream_periodic_timeout_fast_open;
+    priv->istream.close          = camio_istream_periodic_timeout_fast_close;
+    priv->istream.start_read     = camio_istream_periodic_timeout_fast_start_read;
+    priv->istream.end_read       = camio_istream_periodic_timeout_fast_end_read;
+    priv->istream.ready          = camio_istream_periodic_timeout_fast_ready;
+    priv->istream.delete         = camio_istream_periodic_timeout_fast_delete;
+    priv->istream.clock          = clock;
+    priv->istream.selector.fd    = -1;
+    priv->istream.selector.ready = camio_istream_periodic_timeout_fast_selector_ready;
 
     //Call open, because its the obvious thing to do now...
     priv->istream.open(&priv->istream, opts);
