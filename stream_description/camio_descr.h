@@ -28,6 +28,7 @@ typedef struct  {
     struct camio_opt_t* opt_head;
 }camio_descr_t;
 
+
 int camio_descr_parse(const char* description, camio_descr_t* out_descr);
 void camio_descr_destroy(camio_descr_t* out_descr);
 void camio_descr_construct(camio_descr_t* descr);

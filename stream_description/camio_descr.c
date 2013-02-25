@@ -29,6 +29,7 @@ int camio_descr_parse(const char* descr_str, camio_descr_t* out_descr){
     //Get the protocol name
     const char* head_ptr = descr_str;
     const char* tail_ptr = descr_str;
+
     if(*head_ptr == '\0'){
         eprintf_exit( "Unexpected end of description string \"%s\"\n", descr_str);
     }
