@@ -20,13 +20,22 @@ typedef struct {
     //No params at this stage
 } camio_iostream_tcp_params_t;
 
+
+enum camio_iostream_tcp_type { CAMIO_IOSTREAM_TCP_TYPE_CLIENT, CAMIO_IOSTREAM_TCP_TYPE_SERVER};
+
 typedef struct {
     camio_iostream_t iostream;
-    uint8_t* buffer;
-    size_t buffer_size;
+    uint8_t* rbuffer;
+    size_t rbuffer_size;
     size_t bytes_read;
-    int is_closed;                      //Has close be called?
+    int is_closed; //Has close be called?
+    uint8_t* wbuffer;                           //Space to build output
+    size_t wbuffer_size;                     //Size of output buffer
+    uint8_t* assigned_buffer;                  //Assigned write buffer
+    size_t assigned_buffer_sz;              //Assigned write buffer size
+    enum camio_iostream_tcp_type type;
     struct sockaddr_in addr;            //Source address/port
+    int listener_fd;                     //FD of the tcp listener
     camio_iostream_tcp_params_t* params;  //Parameters passed in from the outside
 
 } camio_iostream_tcp_t;

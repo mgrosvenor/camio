@@ -47,11 +47,11 @@ int main(int argc, char** argv){
 
 
     camio_options_short_description("camio_cat");
-    camio_options_add(CAMIO_OPTION_REQUIRED,  's', "stream",   "An iostream description such as tcp:127.0.0.1:2000",  CAMIO_STRING, &options.stream, "");
+    camio_options_add(CAMIO_OPTION_REQUIRED,  'i', "stream",   "An iostream description such as tcp:127.0.0.1:2000",  CAMIO_STRING, &options.stream, "");
     camio_options_add(CAMIO_OPTION_FLAG,      'C', "client",   "If the program is client mode, std-in is connected to the tx pipe and std-out is connected to the rx pipe [default]", CAMIO_BOOL, &options.client, 1);
     camio_options_add(CAMIO_OPTION_FLAG,      'S', "server",   "If the program is server mode, the tx and rx pipes loop-back on each other", CAMIO_BOOL, &options.server, 0);
     camio_options_add(CAMIO_OPTION_OPTIONAL,  's', "selector", "Selector description eg selection", CAMIO_STRING, &options.selector, "spin" );
-    camio_options_long_description("Tests I/O streams  .");
+    camio_options_long_description("Tests I/O streams as either a client or server.");
     camio_options_parse(argc, argv);
 
     if(options.server && options.client){
@@ -62,10 +62,12 @@ int main(int argc, char** argv){
     iostream = camio_iostream_new(options.stream,NULL,NULL);
     selector->insert(selector,&iostream->selector,IOSTREAM);
 
-    if(options.client){
-        stdinstr = camio_istream_new("std-in",NULL,NULL);
+    printf("otions.client=%i\n", options.client);
+    options.client = 1;
+    if(options.client == 1){
+        stdinstr = camio_istream_new("std-log",NULL,NULL);
         selector->insert(selector,&stdinstr->selector,INSTREAM);
-        stdoutstr = camio_ostream_new("std-out", NULL, NULL);
+        stdoutstr = camio_ostream_new("std-log", NULL, NULL);
     }
 
 
@@ -94,6 +96,7 @@ int main(int argc, char** argv){
                 break;
             case INSTREAM:
                 len = stdinstr->start_read(stdinstr,&buff);
+                printf("-->>> %s", buff);
                 iostream->assign_write(iostream,buff,len);
                 iostream->end_write(iostream,len);
                 stdinstr->end_read(stdinstr, NULL);
