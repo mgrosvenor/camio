@@ -129,7 +129,6 @@ int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr )
     }
 
     priv->addr = addr;
-    this->selector.fd = tcp_sock_fd;
     priv->is_closed = 0;
     return 0;
 
