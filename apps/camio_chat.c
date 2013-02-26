@@ -93,7 +93,6 @@ int main(int argc, char** argv){
                 break;
             case INSTREAM:
                 len = stdinstr->start_read(stdinstr,&buff);
-                printf("-->>> %s", buff);
                 iostream->assign_write(iostream,buff,len);
                 iostream->end_write(iostream,len);
                 stdinstr->end_read(stdinstr, NULL);
