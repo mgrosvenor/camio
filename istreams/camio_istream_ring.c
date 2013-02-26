@@ -1,7 +1,7 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
- * Fe2+ ring (newline separated) input stream
+ * Camio ring (newline separated) input stream
  *
  */
 #include <errno.h>

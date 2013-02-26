@@ -2,7 +2,7 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
- * Fe2+ periodic timeout input stream
+ * Camio periodic timeout input stream
  *
  */
 #include <errno.h>

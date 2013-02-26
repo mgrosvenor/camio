@@ -1,7 +1,7 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
- * Fe2+ log (newline separated) input stream
+ * Camio log (newline separated) input stream
  *
  */
 #include <errno.h>
@@ -112,7 +112,7 @@ static int read_to_buff(camio_istream_log_t* priv, uint8_t* new_data_ptr, int bl
 }
 
 
-inline int ascii_hex_to_int(uint8_t a){
+static inline int ascii_hex_to_int(uint8_t a){
     switch(a){
         case '0': return 0x0;
         case '1': return 0x1;

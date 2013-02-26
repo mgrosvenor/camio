@@ -1,7 +1,7 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
- * Parse fe2+ style command line options.
+ * Parse Camio style command line options.
  *
  * Options have the following format:
  *

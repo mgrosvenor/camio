@@ -1,7 +1,7 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
- * Fe2+ NETMAP card input stream
+ * Camio NETMAP card input stream
  *
  */
 

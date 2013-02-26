@@ -1,7 +1,7 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
- * Fe2+ clock driven by an istream
+ * Camio clock driven by an istream
  *
  */
 

@@ -1,7 +1,7 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
- * Fe2+ poll socket input stream
+ * Camio poll socket input stream
  *
  */
 

@@ -1,7 +1,7 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
- * Parse Fe2+ style command line options.
+ * Parse Camio style command line options.
  *
  * Quick and dirty parser for stream descriptions. They have the following format:
  *

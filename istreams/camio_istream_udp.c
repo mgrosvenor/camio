@@ -1,7 +1,7 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
- * Fe2+ udp socket input stream
+ * Camio udp socket input stream
  *
  */
 #include <errno.h>

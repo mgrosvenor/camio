@@ -1,7 +1,7 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
- * Fe2+ DAG card input stream
+ * Camio DAG card input stream
  *
  */
 

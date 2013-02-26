@@ -1,7 +1,7 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
- * Fe2+ poll selector
+ * Camio poll selector
  *
  */
 #include <errno.h>

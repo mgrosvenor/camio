@@ -37,6 +37,15 @@ int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr )
         eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
+    if(priv->params){
+        if(priv->params->listen){
+            priv->type = CAMIO_IOSTREAM_TCP_TYPE_SERVER;
+        }
+        else{
+            priv->type = CAMIO_IOSTREAM_TCP_TYPE_CLIENT;
+        }
+    }
+
     if(!descr->query){
         eprintf_exit( "No address supplied\n");
     }

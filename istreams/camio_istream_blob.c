@@ -1,7 +1,7 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
- * Fe2+ blob (newline separated) input stream
+ * Camio blob (newline separated) input stream
  *
  */
 #include <errno.h>

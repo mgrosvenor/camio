@@ -1,7 +1,7 @@
 /*
  * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
  *
- * Fe2+ raw socket input stream
+ * Camio raw socket input stream
  *
  */
 #include <errno.h>

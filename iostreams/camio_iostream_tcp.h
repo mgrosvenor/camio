@@ -17,7 +17,7 @@
  ********************************************************************/
 
 typedef struct {
-    //No params at this stage
+    int listen;
 } camio_iostream_tcp_params_t;
 
 
