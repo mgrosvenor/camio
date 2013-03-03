@@ -1,0 +1,44 @@
+/*
+ * Copyright  (C) Matthew P. Grosvenor, 2012, All Rights Reserved
+ *
+ * Input stream factory definition
+ *
+ */
+
+#include <string.h>
+
+#include "camio_perf.h"
+#include "../errors/camio_errors.h"
+#include "../ostreams/camio_ostream.h"
+
+camio_perf_t* camio_perf_init(char* output_descr){
+    camio_perf_t* result = malloc(sizeof(camio_perf_t));
+    if(!result){
+        eprintf_exit("Could not allocate memory for camio perf\n");
+    }
+
+    bzero(result,sizeof(camio_perf_t));
+    result->output_descr = output_descr;
+    return result;
+}
+
+void camio_perf_finish(camio_perf_t* camio_perf){
+    char out_buff[1024];
+    uint64_t out_len;
+    camio_ostream_t* out = camio_ostream_new(camio_perf->output_descr,NULL,NULL);
+    out_len = snprintf(&out_buff,1024,"Events fired:%u, Events captured:%u", camio_perf->event_count, camio_perf->event_index);
+    out->assign_write(out,out_buff,out_len);
+    out->end_write(out,out_len);
+    size_t i = 0;
+    for(i = 0; i < MIN(camio_perf->event_index, CAMIO_PERF_EVENT_MAX); i++ ){
+        const camio_perf_event_t event = camio_perf->events[i];
+        char start_stop = event.event_id > (1<<31) ? 'O' : 'A'; //"stArt", "stOp"
+        const uint64_t event_id = event.event_id > (1<<31) ? event.event_id & ~(1<<31) : event.event_id;
+        out_len = snprintf(&out_buff,1024,"%c, %lu, %lu, %lu",  start_stop, event.ts, event_id, event.cond_id);
+        out->assign_write(out,out_buff,out_len);
+        out->end_write(out,out_len);
+    }
+
+    out->delete(out);
+    free(camio_perf);
+}
