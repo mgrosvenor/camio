@@ -26,7 +26,7 @@
 
 
 
-int camio_istream_udp_open(camio_istream_t* this, const camio_descr_t* descr ){
+int camio_istream_udp_open(camio_istream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_istream_udp_t* priv = this->priv;
     char ip_addr[17]; //IP addr is worst case, 16 bytes long (255.255.255.255)
     char udp_port[6]; //UDP port is wost case, 5 bytes long (65536)
@@ -197,7 +197,7 @@ void camio_istream_udp_delete(camio_istream_t* this){
  * Construction
  */
 
-camio_istream_t* camio_istream_udp_construct(camio_istream_udp_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_udp_params_t* params){
+camio_istream_t* camio_istream_udp_construct(camio_istream_udp_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_udp_params_t* params, camio_perf_t* perf_mon ){
     if(!priv){
         eprintf_exit("udp stream supplied is null\n");
     }
@@ -222,19 +222,19 @@ camio_istream_t* camio_istream_udp_construct(camio_istream_udp_t* priv, const ca
     priv->istream.selector.ready = camio_istream_udp_selector_ready;
 
     //Call open, because its the obvious thing to do now...
-    priv->istream.open(&priv->istream, descr);
+    priv->istream.open(&priv->istream, descr, perf_mon);
 
     //Return the generic istream interface for the outside world to use
     return &priv->istream;
 
 }
 
-camio_istream_t* camio_istream_udp_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_udp_params_t* params){
+camio_istream_t* camio_istream_udp_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_udp_params_t* params, camio_perf_t* perf_mon ){
     camio_istream_udp_t* priv = malloc(sizeof(camio_istream_udp_t));
     if(!priv){
         eprintf_exit("No memory available for udp istream creation\n");
     }
-    return camio_istream_udp_construct(priv, descr, clock, params);
+    return camio_istream_udp_construct(priv, descr, clock, params, perf_mon );
 }
 
 

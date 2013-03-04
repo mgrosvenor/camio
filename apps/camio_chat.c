@@ -62,7 +62,7 @@ int main(int argc, char** argv){
 
 
     if(!options.listen  ){
-        stdinstr = camio_istream_new("std-log",NULL,NULL);
+        stdinstr = camio_istream_new("std-log",NULL,NULL,NULL);
         selector->insert(selector,&stdinstr->selector,INSTREAM);
         stdoutstr = camio_ostream_new("std-log", NULL, NULL);
     }

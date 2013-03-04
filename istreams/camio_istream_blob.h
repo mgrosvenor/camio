@@ -40,7 +40,7 @@ typedef struct {
  *                  PUBLIC DEFS
  ********************************************************************/
 
-camio_istream_t* camio_istream_blob_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_blob_params_t* params);
+camio_istream_t* camio_istream_blob_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_blob_params_t* params, camio_perf_t* perf_mon);
 
 
 #endif /* CAMIO_ISTREAM_BLOB_H_ */

@@ -17,7 +17,7 @@
 
 #define CAMIO_ISTREAM_ISTREAM_LOG_BUFF_INIT 4096
 
-int camio_istream_log_open(camio_istream_t* this, const camio_descr_t* descr ){
+int camio_istream_log_open(camio_istream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_istream_log_t* priv = this->priv;
 
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
@@ -296,7 +296,7 @@ void camio_istream_log_delete(camio_istream_t* this){
  * Construction
  */
 
-camio_istream_t* camio_istream_log_construct(camio_istream_log_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_log_params_t* params){
+camio_istream_t* camio_istream_log_construct(camio_istream_log_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_log_params_t* params, camio_perf_t* perf_mon){
     if(!priv){
         eprintf_exit("log stream supplied is null\n");
     }
@@ -322,19 +322,19 @@ camio_istream_t* camio_istream_log_construct(camio_istream_log_t* priv, const ca
     priv->istream.selector.ready = camio_istream_log_selector_ready;
 
     //Call open, because its the obvious thing to do now...
-    priv->istream.open(&priv->istream, descr);
+    priv->istream.open(&priv->istream, descr, perf_mon);
 
     //Return the generic istream interface for the outside world to use
     return &priv->istream;
 
 }
 
-camio_istream_t* camio_istream_log_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_log_params_t* params){
+camio_istream_t* camio_istream_log_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_log_params_t* params, camio_perf_t* perf_mon){
     camio_istream_log_t* priv = malloc(sizeof(camio_istream_log_t));
     if(!priv){
         eprintf_exit("No memory available for log istream creation\n");
     }
-    return camio_istream_log_construct(priv, descr, clock, params);
+    return camio_istream_log_construct(priv, descr, clock, params, perf_mon);
 }
 
 

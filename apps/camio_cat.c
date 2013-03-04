@@ -56,7 +56,7 @@ int main(int argc, char** argv){
 
     int i;
     for(i = 0; i < options.inputs.count; i++){
-        camio_istream_t* in = camio_istream_new(options.inputs.items[i], clock, NULL);
+        camio_istream_t* in = camio_istream_new(options.inputs.items[i], clock, NULL, NULL);
         selector->insert(selector,&in->selector,i);
         camio_list_add(istream,&istreams,in);
     }

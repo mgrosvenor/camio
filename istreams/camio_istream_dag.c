@@ -162,7 +162,7 @@ void camio_istream_dag_delete(camio_istream_t* this){
  * Construction
  */
 
-camio_istream_t* camio_istream_dag_construct(camio_istream_dag_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_dag_params_t* params){
+camio_istream_t* camio_istream_dag_construct(camio_istream_dag_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_dag_params_t* params, camio_perf_t* perf_mon){
     if(!priv){
         eprintf_exit("dag stream supplied is null\n");
     }
@@ -187,19 +187,19 @@ camio_istream_t* camio_istream_dag_construct(camio_istream_dag_t* priv, const ca
     priv->istream.selector.ready = camio_istream_dag_selector_ready;
 
     //Call open, because its the obvious thing to do now...
-    priv->istream.open(&priv->istream, descr);
+    priv->istream.open(&priv->istream, descr, perf_mon);
 
     //Return the generic istream interface for the outside world to use
     return &priv->istream;
 
 }
 
-camio_istream_t* camio_istream_dag_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_dag_params_t* params){
+camio_istream_t* camio_istream_dag_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_dag_params_t* params, camio_perf_t* perf_mon){
     camio_istream_dag_t* priv = malloc(sizeof(camio_istream_dag_t));
     if(!priv){
         eprintf_exit("No memory available for dag istream creation\n");
     }
-    return camio_istream_dag_construct(priv, descr, clock, params);
+    return camio_istream_dag_construct(priv, descr, clock, params, perf_mon);
 }
 
 
