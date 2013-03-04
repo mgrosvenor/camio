@@ -134,8 +134,14 @@ static int prepare_next(camio_istream_udp_t* priv, int blocking){
     set_fd_blocking(priv->istream.selector.fd, blocking);
 
     int bytes = recv(priv->istream.selector.fd,priv->buffer,priv->buffer_size, 0);
-    if( bytes < 0){
-        eprintf_exit(strerror(errno));
+    //Was there some error
+    if(bytes < 0){
+        if(errno == EAGAIN || errno == EWOULDBLOCK){
+            return 0; //Reading would have blocked, we don't want this
+        }
+
+        //Uh ohh, some other error! Eek! Die!
+        eprintf_exit("Could not read UDP. error no=%i (%s)\n", errno, strerror(errno));
     }
 
     priv->bytes_read = bytes;
@@ -236,8 +242,3 @@ camio_istream_t* camio_istream_udp_new( const camio_descr_t* descr, camio_clock_
     }
     return camio_istream_udp_construct(priv, descr, clock, params);
 }
-
-
-
-
-
