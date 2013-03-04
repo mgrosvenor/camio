@@ -26,7 +26,11 @@ void camio_perf_finish(camio_perf_t* camio_perf){
     char out_buff[1024];
     uint64_t out_len;
     camio_ostream_t* out = camio_ostream_new(camio_perf->output_descr,NULL,NULL);
-    out_len = snprintf(&out_buff,1024,"Events fired:%u, Events captured:%u", camio_perf->event_count, camio_perf->event_index);
+    if(!out){
+        eprintf_exit("Could not create output stream for camio perf\n");
+    }
+
+    out_len = snprintf(&out_buff,1024,"F %u, C %u", camio_perf->event_count, camio_perf->event_index);
     out->assign_write(out,out_buff,out_len);
     out->end_write(out,out_len);
     size_t i = 0;
