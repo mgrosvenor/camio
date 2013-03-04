@@ -25,10 +25,15 @@
 
 
 
-int camio_istream_raw_open(camio_istream_t* this, const camio_descr_t* descr ){
+int camio_istream_raw_open(camio_istream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon  ){
     camio_istream_raw_t* priv = this->priv;
     const char* iface = descr->query;
     int raw_sock_fd;
+
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
 
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
@@ -116,6 +121,7 @@ static void set_fd_blocking(int fd, int blocking){
 
 static int prepare_next(camio_istream_raw_t* priv, int blocking){
     if(priv->bytes_read){
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RAW,CAMIO_PERF_COND_ISTREAM_EXISTING_DATA);
         return priv->bytes_read;
     }
 
@@ -123,10 +129,12 @@ static int prepare_next(camio_istream_raw_t* priv, int blocking){
 
     int bytes = recv(priv->istream.selector.fd,priv->buffer,priv->buffer_size, 0);
     if( bytes < 0){
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RAW,CAMIO_PERF_COND_ISTREAM_READ_ERROR);
         eprintf_exit("Could not receive from socket. Error = %s\n",strerror(errno));
     }
 
     priv->bytes_read = bytes;
+    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RAW,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
     return bytes;
 
 }
@@ -184,7 +192,7 @@ void camio_istream_raw_delete(camio_istream_t* this){
  * Construction
  */
 
-camio_istream_t* camio_istream_raw_construct(camio_istream_raw_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_raw_params_t* params){
+camio_istream_t* camio_istream_raw_construct(camio_istream_raw_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_raw_params_t* params, camio_perf_t* perf_mon ){
     if(!priv){
         eprintf_exit("raw stream supplied is null\n");
     }
@@ -209,19 +217,19 @@ camio_istream_t* camio_istream_raw_construct(camio_istream_raw_t* priv, const ca
     priv->istream.selector.ready = camio_istream_raw_selector_ready;
 
     //Call open, because its the obvious thing to do now...
-    priv->istream.open(&priv->istream, descr);
+    priv->istream.open(&priv->istream, descr, perf_mon);
 
     //Return the generic istream interface for the outside world to use
     return &priv->istream;
 
 }
 
-camio_istream_t* camio_istream_raw_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_raw_params_t* params){
+camio_istream_t* camio_istream_raw_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_raw_params_t* params, camio_perf_t* perf_mon ){
     camio_istream_raw_t* priv = malloc(sizeof(camio_istream_raw_t));
     if(!priv){
         eprintf_exit("No memory available for raw istream creation\n");
     }
-    return camio_istream_raw_construct(priv, descr, clock, params);
+    return camio_istream_raw_construct(priv, descr, clock, params, perf_mon);
 }
 
 

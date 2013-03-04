@@ -32,6 +32,7 @@ typedef struct {
     size_t read_size;                   //Size of a line that is ready for start_read
     uint8_t* data_head_ptr;             //Place to read data from in by calling start_read
     camio_istream_log_params_t* params;  //Parameters passed in from the outside
+    camio_perf_t* perf_mon;
 
 } camio_istream_log_t;
 
@@ -42,7 +43,7 @@ typedef struct {
  *                  PUBLIC DEFS
  ********************************************************************/
 
-camio_istream_t* camio_istream_log_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_log_params_t* params);
+camio_istream_t* camio_istream_log_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_log_params_t* params, camio_perf_t* perf_mon);
 
 
 #endif /* CAMIO_ISTREAM_LOG_H_ */

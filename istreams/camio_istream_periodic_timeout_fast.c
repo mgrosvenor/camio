@@ -32,8 +32,13 @@ static inline uint64_t timespec_to_ns(struct timespec* ts){
 //}
 
 
-int camio_istream_periodic_timeout_fast_open(camio_istream_t* this, const camio_descr_t* descr ){
+int camio_istream_periodic_timeout_fast_open(camio_istream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_istream_periodic_timeout_fast_t* priv = this->priv;
+
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
 
 
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
@@ -84,6 +89,7 @@ void camio_istream_periodic_timeout_fast_close(camio_istream_t* this){
 
 static int prepare_next(camio_istream_periodic_timeout_fast_t* priv){
     if(priv->is_ready){
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_PERIODIC_FAST,CAMIO_PERF_COND_ISTREAM_NO_DATA);
         return 1;
     }
 
@@ -95,6 +101,7 @@ static int prepare_next(camio_istream_periodic_timeout_fast_t* priv){
         priv->ns_aim    = ns_now + priv->period;
         priv->is_ready  = 1;
         priv->result    = ns_now;
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_PERIODIC_FAST,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
         return 1;
     }
 
@@ -104,6 +111,7 @@ static int prepare_next(camio_istream_periodic_timeout_fast_t* priv){
 int camio_istream_periodic_timeout_fast_ready(camio_istream_t* this){
     camio_istream_periodic_timeout_fast_t* priv = this->priv;
     if(priv->is_ready || priv->is_closed){
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_PERIODIC_FAST,CAMIO_PERF_COND_ISTREAM_NO_DATA);
         return 1;
     }
 
@@ -150,7 +158,7 @@ void camio_istream_periodic_timeout_fast_delete(camio_istream_t* this){
  * Construction
  */
 
-camio_istream_t* camio_istream_periodic_timeout_fast_construct(camio_istream_periodic_timeout_fast_t* priv, const camio_descr_t* opts, camio_clock_t* clock, camio_istream_periodic_timeout_fast_params_t* params){
+camio_istream_t* camio_istream_periodic_timeout_fast_construct(camio_istream_periodic_timeout_fast_t* priv, const camio_descr_t* opts, camio_clock_t* clock, camio_istream_periodic_timeout_fast_params_t* params, camio_perf_t* perf_mon ){
     if(!priv){
         eprintf_exit("periodic_timeout_fast stream supplied is null\n");
     }
@@ -174,19 +182,19 @@ camio_istream_t* camio_istream_periodic_timeout_fast_construct(camio_istream_per
     priv->istream.selector.ready = camio_istream_periodic_timeout_fast_selector_ready;
 
     //Call open, because its the obvious thing to do now...
-    priv->istream.open(&priv->istream, opts);
+    priv->istream.open(&priv->istream, opts, perf_mon);
 
     //Return the generic istream interface for the outside world to use
     return &priv->istream;
 
 }
 
-camio_istream_t* camio_istream_periodic_timeout_fast_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_periodic_timeout_fast_params_t* params){
+camio_istream_t* camio_istream_periodic_timeout_fast_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_periodic_timeout_fast_params_t* params, camio_perf_t* perf_mon ){
     camio_istream_periodic_timeout_fast_t* priv = malloc(sizeof(camio_istream_periodic_timeout_fast_t));
     if(!priv){
         eprintf_exit("No memory available for periodic_timeout_fast istream creation\n");
     }
-    return camio_istream_periodic_timeout_fast_construct(priv, opts, clock, params);
+    return camio_istream_periodic_timeout_fast_construct(priv, opts, clock, params, perf_mon);
 }
 
 

@@ -9,6 +9,7 @@
 #define CAMIO_ISTREAM_BLOB_H_
 
 #include "camio_istream.h"
+#include "../perf/camio_perf.h"
 
 #define CAMIO_ISTREAM_BLOB_BLOCKING    1
 #define CAMIO_ISTREAM_BLOB_NONBLOCKING 0
@@ -24,12 +25,14 @@ typedef struct {
 
 typedef struct {
     camio_istream_t istream;
-    int is_closed;                       //Has close be called?
-    uint8_t* blob;                       //Pointer to the head of the blob
-    size_t blob_size;                    //Size of the blob buffer
-    size_t read_size;                    //Size of the current read waiting (if any)
-    uint64_t offset;                     //Current offset into the blob
-    camio_istream_blob_params_t* params;  //Parameters passed in from the outside
+    int is_closed;                          //Has close be called?
+    uint8_t* blob;                          //Pointer to the head of the blob
+    size_t blob_size;                       //Size of the blob buffer
+    size_t read_size;                       //Size of the current read waiting (if any)
+    uint64_t offset;                        //Current offset into the blob
+    camio_istream_blob_params_t* params;    //Parameters passed in from the outside
+    camio_perf_t* perf_mon;                 //Performance monitoring and measurement
+
 
 } camio_istream_blob_t;
 
@@ -40,7 +43,7 @@ typedef struct {
  *                  PUBLIC DEFS
  ********************************************************************/
 
-camio_istream_t* camio_istream_blob_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_blob_params_t* params);
+camio_istream_t* camio_istream_blob_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_blob_params_t* params, camio_perf_t* perf_mon);
 
 
 #endif /* CAMIO_ISTREAM_BLOB_H_ */

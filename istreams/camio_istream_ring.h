@@ -32,6 +32,7 @@ typedef struct {
     uint64_t sync_counter;               //Synchronization counter
     uint64_t index;                      //Current index into the buffer
     camio_istream_ring_params_t* params;  //Parameters passed in from the outside
+    camio_perf_t* perf_mon;
 
 } camio_istream_ring_t;
 
@@ -42,7 +43,7 @@ typedef struct {
  *                  PUBLIC DEFS
  ********************************************************************/
 
-camio_istream_t* camio_istream_ring_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_ring_params_t* params);
+camio_istream_t* camio_istream_ring_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_ring_params_t* params, camio_perf_t* perf_mon );
 
 
 #endif /* CAMIO_ISTREAM_RING_H_ */

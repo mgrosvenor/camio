@@ -19,8 +19,13 @@
 #include "../stream_description/camio_opt_parser.h"
 
 
-int camio_istream_blob_open(camio_istream_t* this, const camio_descr_t* descr ){
+int camio_istream_blob_open(camio_istream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_istream_blob_t* priv = this->priv;
+
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
 
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
@@ -65,11 +70,14 @@ void camio_istream_blob_close(camio_istream_t* this){
 static int prepare_next(camio_istream_blob_t* priv){
     if(priv->offset == priv->blob_size || priv->is_closed){
         priv->read_size = 0;
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_BLOB,CAMIO_PERF_COND_ISTREAM_NO_DATA);
         return 0; //Nothing more to read
     }
 
     //There is data, it is unread
     priv->read_size = priv->blob_size;
+    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_BLOB,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
+
     return priv->read_size;
 }
 
@@ -124,7 +132,7 @@ void camio_istream_blob_delete(camio_istream_t* this){
  * Construction
  */
 
-camio_istream_t* camio_istream_blob_construct(camio_istream_blob_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_blob_params_t* params){
+camio_istream_t* camio_istream_blob_construct(camio_istream_blob_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_blob_params_t* params, camio_perf_t* perf_mon){
     if(!priv){
         eprintf_exit("Blob stream supplied is null\n");
     }
@@ -150,19 +158,19 @@ camio_istream_t* camio_istream_blob_construct(camio_istream_blob_t* priv, const 
     priv->istream.selector.ready = camio_istream_blob_selector_ready;
 
     //Call open, because its the obvious thing to do now...
-    priv->istream.open(&priv->istream, descr);
+    priv->istream.open(&priv->istream, descr, perf_mon);
 
     //Return the generic istream interface for the outside world to use
     return &priv->istream;
 
 }
 
-camio_istream_t* camio_istream_blob_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_blob_params_t* params){
+camio_istream_t* camio_istream_blob_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_blob_params_t* params, camio_perf_t* perf_mon){
     camio_istream_blob_t* priv = malloc(sizeof(camio_istream_blob_t));
     if(!priv){
         eprintf_exit("No memory available for blob istream creation\n");
     }
-    return camio_istream_blob_construct(priv, descr, clock, params);
+    return camio_istream_blob_construct(priv, descr, clock, params, perf_mon);
 }
 
 

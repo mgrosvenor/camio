@@ -22,10 +22,15 @@
 #define CAMIO_ISTREAM_RING_SIZE (4 * 1024 * 1024) //4MB
 #define CAMIO_ISTREAM_RING_SLOT_SIZE (4 * 1024)  //4K
 
-int camio_istream_ring_open(camio_istream_t* this, const camio_descr_t* descr ){
+int camio_istream_ring_open(camio_istream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_istream_ring_t* priv = this->priv;
     int ring_fd = -1;
     volatile uint8_t* ring = NULL;
+
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
 
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
@@ -91,6 +96,7 @@ static int prepare_next(camio_istream_ring_t* priv){
 
     //Simple case, there's already data waiting
     if(unlikely(priv->read_size)){
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_ISTREAM_EXISTING_DATA);
         return priv->read_size;
     }
 
@@ -99,6 +105,7 @@ static int prepare_next(camio_istream_ring_t* priv){
     if( likely(curr_sync_count == priv->sync_counter)){
         const uint64_t data_len  = *((volatile uint64_t*)(priv->curr + CAMIO_ISTREAM_RING_SLOT_SIZE - 2* sizeof(uint64_t)));
         priv->read_size = data_len;
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
         return data_len;
     }
 
@@ -107,6 +114,7 @@ static int prepare_next(camio_istream_ring_t* priv){
         priv->sync_counter = curr_sync_count;
         const uint64_t data_len  = *((volatile uint64_t*)(priv->curr + CAMIO_ISTREAM_RING_SLOT_SIZE - 2* sizeof(uint64_t)));
         priv->read_size = data_len;
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_ISTREAM_READ_ERROR);
         return data_len;
     }
 
@@ -180,7 +188,7 @@ void camio_istream_ring_delete(camio_istream_t* this){
  * Construction
  */
 
-camio_istream_t* camio_istream_ring_construct(camio_istream_ring_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_ring_params_t* params){
+camio_istream_t* camio_istream_ring_construct(camio_istream_ring_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_ring_params_t* params, camio_perf_t* perf_mon ){
     if(!priv){
         eprintf_exit("ring stream supplied is null\n");
     }
@@ -208,19 +216,19 @@ camio_istream_t* camio_istream_ring_construct(camio_istream_ring_t* priv, const 
     priv->istream.selector.ready = camio_istream_ring_selector_ready;
 
     //Call open, because its the obvious thing to do now...
-    priv->istream.open(&priv->istream, descr);
+    priv->istream.open(&priv->istream, descr, perf_mon);
 
     //Return the generic istream interface for the outside world to use
     return &priv->istream;
 
 }
 
-camio_istream_t* camio_istream_ring_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_ring_params_t* params){
+camio_istream_t* camio_istream_ring_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_ring_params_t* params, camio_perf_t* perf_mon ){
     camio_istream_ring_t* priv = malloc(sizeof(camio_istream_ring_t));
     if(!priv){
         eprintf_exit("No memory available for ring istream creation\n");
     }
-    return camio_istream_ring_construct(priv, descr, clock, params);
+    return camio_istream_ring_construct(priv, descr, clock, params, perf_mon );
 }
 
 

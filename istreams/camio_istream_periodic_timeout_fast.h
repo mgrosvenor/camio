@@ -28,6 +28,7 @@ typedef struct {
     int clock_type;
     uint64_t result;
     camio_istream_periodic_timeout_fast_params_t* params;  //Parameters passed in from the outside
+    camio_perf_t* perf_mon;
 
 } camio_istream_periodic_timeout_fast_t;
 
@@ -38,7 +39,7 @@ typedef struct {
  *                  PUBLIC DEFS
  ********************************************************************/
 
-camio_istream_t* camio_istream_periodic_timeout_fast_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_periodic_timeout_fast_params_t* params);
+camio_istream_t* camio_istream_periodic_timeout_fast_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_periodic_timeout_fast_params_t* params, camio_perf_t* perf_mon );
 
 
 #endif /* CAMIO_ISTREAM_PERIODIC_TIMEOUT_FAST_H_ */

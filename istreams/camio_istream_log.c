@@ -17,8 +17,14 @@
 
 #define CAMIO_ISTREAM_ISTREAM_LOG_BUFF_INIT 4096
 
-int camio_istream_log_open(camio_istream_t* this, const camio_descr_t* descr ){
+int camio_istream_log_open(camio_istream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_istream_log_t* priv = this->priv;
+
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
+
 
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
@@ -97,17 +103,21 @@ static int read_to_buff(camio_istream_log_t* priv, uint8_t* new_data_ptr, int bl
         }
 
         //Uh ohh, some other error! Eek! Die!
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_LOG,CAMIO_PERF_COND_ISTREAM_READ_ERROR);
         eprintf_exit("Could not read tlog input error no=%i (%s)\n", errno, strerror(errno));
+
     }
 
     //We've hit the end of the file. Close and leave.
     if(bytes == 0){
         priv->istream.close(&priv->istream);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_LOG,CAMIO_PERF_COND_ISTREAM_NO_DATA);
         return 0;
     }
 
     //Woot
     priv->line_buffer_count += bytes;
+    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_LOG,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
     return bytes;
 }
 
@@ -296,7 +306,7 @@ void camio_istream_log_delete(camio_istream_t* this){
  * Construction
  */
 
-camio_istream_t* camio_istream_log_construct(camio_istream_log_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_log_params_t* params){
+camio_istream_t* camio_istream_log_construct(camio_istream_log_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_log_params_t* params, camio_perf_t* perf_mon){
     if(!priv){
         eprintf_exit("log stream supplied is null\n");
     }
@@ -322,19 +332,19 @@ camio_istream_t* camio_istream_log_construct(camio_istream_log_t* priv, const ca
     priv->istream.selector.ready = camio_istream_log_selector_ready;
 
     //Call open, because its the obvious thing to do now...
-    priv->istream.open(&priv->istream, descr);
+    priv->istream.open(&priv->istream, descr, perf_mon);
 
     //Return the generic istream interface for the outside world to use
     return &priv->istream;
 
 }
 
-camio_istream_t* camio_istream_log_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_log_params_t* params){
+camio_istream_t* camio_istream_log_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_log_params_t* params, camio_perf_t* perf_mon){
     camio_istream_log_t* priv = malloc(sizeof(camio_istream_log_t));
     if(!priv){
         eprintf_exit("No memory available for log istream creation\n");
     }
-    return camio_istream_log_construct(priv, descr, clock, params);
+    return camio_istream_log_construct(priv, descr, clock, params, perf_mon);
 }
 
 
