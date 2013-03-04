@@ -12,7 +12,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define CAMIO_PERF_EVENT_MAX (1024 * 128)
+#define CAMIO_PERF_EVENTS_MAX (1024 * 128)
+
 
 typedef struct {
     uint64_t ts;             //Time the event was logged
@@ -20,12 +21,46 @@ typedef struct {
     uint64_t cond_id : 32;   //ID of the event, used to differentiate different start/stop conditions for the same ID.
 } camio_perf_event_t;
 
+//Event IDs
+enum {
+    CAMIO_PERF_EVENT_ISTREAM_BLOB = 0,
+    CAMIO_PERF_EVENT_ISTREAM_DAG,
+    CAMIO_PERF_EVENT_ISTREAM_LOG,
+    CAMIO_PERF_EVENT_ISTREAM_NETMAP,
+    CAMIO_PERF_EVENT_ISTREAM_PCAP,
+    CAMIO_PERF_EVENT_ISTREAM_PERIODIC_FAST,
+    CAMIO_PERF_EVENT_ISTREAM_PERIODIC,
+    CAMIO_PERF_EVENT_ISTREAM_RAW,
+    CAMIO_PERF_EVENT_ISTREAM_RING,
+    CAMIO_PERF_EVENT_ISTREAM_UDP,
+    CAMIO_PERF_EVENT_OSTREAM_BLOB,
+    CAMIO_PERF_EVENT_OSTREAM_LOG,
+    CAMIO_PERF_EVENT_OSTREAM_NETMAP,
+    CAMIO_PERF_EVENT_OSTREAM_RAW,
+    CAMIO_PERF_EVENT_OSTREAM_RING,
+    CAMIO_PERF_EVENT_OSTREAM_UDP,
+    CAMIO_PERF_EVENT_COUNT
+};
+#define CAMIO_PERF_EVENT_ID_MAX ( (1 << 31) - 1 )  //Cannot have more than 2 billion event IDs....
+
+
+
+//CONDITION IDs
+enum{
+    CAMIO_PERF_COND_ISTREAM_NEW_DATA = 0,
+    CAMIO_PERF_COND_ISTREAM_EXISTING_DATA,
+    CAMIO_PERF_COND_ISTREAM_NO_DATA,
+    CAMIO_PERF_COND_ISTREAM_READ_ERROR,
+
+};
+
+
 
 typedef struct {
     char* output_descr;
     uint64_t event_count;
     uint64_t event_index;
-    camio_perf_event_t events[CAMIO_PERF_EVENT_MAX];
+    camio_perf_event_t events[CAMIO_PERF_EVENTS_MAX];
 
 } camio_perf_t;
 
@@ -40,10 +75,10 @@ void camio_perf_finish(camio_perf_t* camio_perf);
 //  Flushing the pipeline is an expensive call and not something that we want to do too much
 //  on the critical path. For this reason I've decided to trade a little accuracy for
 //  better overall performance.
-#define camio_perf_event_start(camio_perf, event_id, cond_id)                                   \
-    if(likely(camio_perf->event_index < CAMIO_PERF_EVENT_MAX)){                                 \
-        camio_perf->events[camio_perf->event_index].event_id = event_id;                        \
-        camio_perf->events[camio_perf->event_index].cond_id  = cond_id;                         \
+#define camio_perf_event_start(camio_perf, event, cond)                                         \
+    if(likely(camio_perf->event_index < CAMIO_PERF_EVENTS_MAX)){                                \
+        camio_perf->events[camio_perf->event_index].event_id = event;                           \
+        camio_perf->events[camio_perf->event_index].cond_id  = cond;                            \
         __asm __volatile("rdtsc" : "=A" (camio_perf->events[camio_perf->event_index].ts));      \
         camio_perf->event_index++;                                                              \
     }                                                                                           \
@@ -56,14 +91,17 @@ void camio_perf_finish(camio_perf_t* camio_perf);
 //  Flushing the pipeline is an expensive call and not something that we want to do too much
 //  on the critical path. For this reason I've decided to trade a little accuracy for
 //  better overall performance.
-#define camio_perf_event_stop(camio_perf, event_id, cond_id)                                    \
-    if(likely(camio_perf->event_index < CAMIO_PERF_EVENT_MAX)){                                 \
+#define camio_perf_event_stop(camio_perf, event, cond)                                          \
+    if(likely(camio_perf->event_index < CAMIO_PERF_EVENTS_MAX)){                                \
         __asm __volatile("rdtsc" : "=A" (camio_perf->events[camio_perf->event_index].ts));      \
-        camio_perf->events[camio_perf->event_index].event_id = event_id + (1<<31);              \
-        camio_perf->events[camio_perf->event_index].cond_id  = cond_id;                         \
+        camio_perf->events[camio_perf->event_index].event_id = event + (1<<31);                 \
+        camio_perf->events[camio_perf->event_index].cond_id  = cond;                            \
         camio_perf->event_index++;                                                              \
     }                                                                                           \
     camio_perf->event_count++;
+
+
+
 
 
 

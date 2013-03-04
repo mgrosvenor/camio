@@ -32,6 +32,11 @@ int camio_istream_udp_open(camio_istream_t* this, const camio_descr_t* descr, ca
     char udp_port[6]; //UDP port is wost case, 5 bytes long (65536)
     int udp_sock_fd;
 
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
+
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
     }
@@ -84,13 +89,13 @@ int camio_istream_udp_open(camio_istream_t* this, const camio_descr_t* descr, ca
     printf("%X\n", addr.sin_addr.s_addr);
 
     if( bind(udp_sock_fd, (struct sockaddr *)&addr, sizeof(addr)) ){
-         eprintf_exit(strerror(errno));
+         eprintf_exit("%s\n", strerror(errno));
     }
 
-    int RCVBUFF_SIZE = 512 * 1024 * 1024;
-    if (setsockopt(udp_sock_fd, SOL_SOCKET, SO_RCVBUF, &RCVBUFF_SIZE, sizeof(RCVBUFF_SIZE)) < 0) {
-        eprintf_exit(strerror(errno));
-    }
+//    int RCVBUFF_SIZE = 512 * 1024 * 1024;
+//    if (setsockopt(udp_sock_fd, SOL_SOCKET, SO_RCVBUF, &RCVBUFF_SIZE, sizeof(RCVBUFF_SIZE)) < 0) {
+//        eprintf_exit(strerror(errno));
+//    }
 
 
     priv->addr = addr;
@@ -135,10 +140,12 @@ static int prepare_next(camio_istream_udp_t* priv, int blocking){
 
     int bytes = recv(priv->istream.selector.fd,priv->buffer,priv->buffer_size, 0);
     if( bytes < 0){
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_UDP,CAMIO_PERF_COND_ISTREAM_READ_ERROR);
         eprintf_exit(strerror(errno));
     }
 
     priv->bytes_read = bytes;
+    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_UDP,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
     return bytes;
 
 }

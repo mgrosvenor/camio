@@ -42,6 +42,7 @@ typedef struct {
 
     camio_istream_t istream;
     camio_istream_netmap_params_t* params;  //Parameters passed in from the outside
+    camio_perf_t* perf_mon;                 //Performance measurement
 
 } camio_istream_netmap_t;
 

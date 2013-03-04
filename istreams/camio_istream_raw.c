@@ -30,6 +30,11 @@ int camio_istream_raw_open(camio_istream_t* this, const camio_descr_t* descr, ca
     const char* iface = descr->query;
     int raw_sock_fd;
 
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
+
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
     }
@@ -116,6 +121,7 @@ static void set_fd_blocking(int fd, int blocking){
 
 static int prepare_next(camio_istream_raw_t* priv, int blocking){
     if(priv->bytes_read){
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RAW,CAMIO_PERF_COND_ISTREAM_EXISTING_DATA);
         return priv->bytes_read;
     }
 
@@ -123,10 +129,12 @@ static int prepare_next(camio_istream_raw_t* priv, int blocking){
 
     int bytes = recv(priv->istream.selector.fd,priv->buffer,priv->buffer_size, 0);
     if( bytes < 0){
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RAW,CAMIO_PERF_COND_ISTREAM_READ_ERROR);
         eprintf_exit("Could not receive from socket. Error = %s\n",strerror(errno));
     }
 
     priv->bytes_read = bytes;
+    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RAW,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
     return bytes;
 
 }

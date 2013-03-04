@@ -25,6 +25,7 @@ typedef struct {
     size_t bytes_read;
     int is_closed;                      //Has close be called?
     camio_istream_raw_params_t* params;  //Parameters passed in from the outside
+    camio_perf_t* perf_mon;
 
 } camio_istream_raw_t;
 

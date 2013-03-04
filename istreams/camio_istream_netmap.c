@@ -88,6 +88,12 @@ int camio_istream_netmap_open(camio_istream_t* this, const camio_descr_t* descr,
     int netmap_fd = -1;
     struct nmreq req;
 
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
+
+
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
     }
@@ -205,6 +211,7 @@ static int prepare_next(camio_istream_t* this){
             priv->ring          = ring; //Keep the ring for later
             //printf("Packet of size %lu is available on ring %lu at slot %u\n", priv->packet_size, i, ring->cur );
             //printf("Data on buffer idx=%u\n", ring->slot[ring->cur].buf_idx);
+            camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_NETMAP,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
             return 1;
         }
     }

@@ -27,6 +27,7 @@ typedef struct {
     size_t data_size;
     camio_istream_t istream;
     camio_istream_dag_params_t* params;  //Parameters passed in from the outside
+    camio_perf_t* perf_mon;              //Performance monitoring and measurement
 
 } camio_istream_dag_t;
 

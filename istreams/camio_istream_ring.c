@@ -27,6 +27,11 @@ int camio_istream_ring_open(camio_istream_t* this, const camio_descr_t* descr, c
     int ring_fd = -1;
     volatile uint8_t* ring = NULL;
 
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
+
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
     }
@@ -91,6 +96,7 @@ static int prepare_next(camio_istream_ring_t* priv){
 
     //Simple case, there's already data waiting
     if(unlikely(priv->read_size)){
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_ISTREAM_EXISTING_DATA);
         return priv->read_size;
     }
 
@@ -99,6 +105,7 @@ static int prepare_next(camio_istream_ring_t* priv){
     if( likely(curr_sync_count == priv->sync_counter)){
         const uint64_t data_len  = *((volatile uint64_t*)(priv->curr + CAMIO_ISTREAM_RING_SLOT_SIZE - 2* sizeof(uint64_t)));
         priv->read_size = data_len;
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
         return data_len;
     }
 
@@ -107,6 +114,7 @@ static int prepare_next(camio_istream_ring_t* priv){
         priv->sync_counter = curr_sync_count;
         const uint64_t data_len  = *((volatile uint64_t*)(priv->curr + CAMIO_ISTREAM_RING_SLOT_SIZE - 2* sizeof(uint64_t)));
         priv->read_size = data_len;
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_ISTREAM_READ_ERROR);
         return data_len;
     }
 

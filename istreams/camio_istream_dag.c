@@ -24,9 +24,14 @@
 #include "../dag/dagapi.h"
 #include "../stream_description/camio_opt_parser.h"
 
-int camio_istream_dag_open(camio_istream_t* this, const camio_descr_t* descr ){
+int camio_istream_dag_open(camio_istream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_istream_dag_t* priv = this->priv;
     int dag_fd = -1;
+
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
 
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
@@ -79,6 +84,7 @@ static int prepare_next(camio_istream_t* this){
 
     //Simple case, there's already data waiting
     if(unlikely((size_t)priv->dag_data)){
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_DAG,CAMIO_PERF_COND_ISTREAM_EXISTING_DATA);
         return priv->data_size;
     }
 
@@ -93,6 +99,7 @@ static int prepare_next(camio_istream_t* this){
 
         priv->dag_data = data;
         priv->data_size = ntohs(data->rlen);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_DAG,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
         return priv->data_size;
     }
 

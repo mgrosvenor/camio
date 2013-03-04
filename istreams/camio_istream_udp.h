@@ -28,6 +28,7 @@ typedef struct {
     int is_closed;                      //Has close be called?
     struct sockaddr_in addr;            //Source address/port
     camio_istream_udp_params_t* params;  //Parameters passed in from the outside
+    camio_perf_t* perf_mon;
 
 } camio_istream_udp_t;
 

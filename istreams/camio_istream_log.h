@@ -32,6 +32,7 @@ typedef struct {
     size_t read_size;                   //Size of a line that is ready for start_read
     uint8_t* data_head_ptr;             //Place to read data from in by calling start_read
     camio_istream_log_params_t* params;  //Parameters passed in from the outside
+    camio_perf_t* perf_mon;
 
 } camio_istream_log_t;
 

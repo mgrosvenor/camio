@@ -29,6 +29,7 @@ typedef struct {
     size_t read_size;                   //Size of the last read
     camio_istream_periodic_timeout_params_t* params;  //Parameters passed in from the outside
     int blocking;
+    camio_perf_t* perf_mon;
 } camio_istream_periodic_timeout_t;
 
 
