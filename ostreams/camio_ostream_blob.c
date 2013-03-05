@@ -19,8 +19,13 @@
 #define CAMIO_OSTREAM_BLOB_INIT_BUFF_SIZE (4 * 1024ULL) //4kB initial buffer, sensible size
 #define CAMIO_OSTREAM_BLOB_INIT_WRITE_SIZE (512 * 1024 * 1024ULL) //512MB per write. This is stupidly large.
 
-int camio_ostream_blob_open(camio_ostream_t* this, const camio_descr_t* descr ){
+int camio_ostream_blob_open(camio_ostream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_ostream_blob_t* priv = this->priv;
+
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
 
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
@@ -99,6 +104,7 @@ uint8_t* camio_ostream_blob_end_write(camio_ostream_t* this, size_t len){
     size_t total_written = 0;
     size_t written = 0;
 
+    camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_OSTREAM_BLOB, CAMIO_PERF_COND_WRITE);
     const uint8_t* buffer = priv->assigned_buffer ? priv->assigned_buffer : priv->buffer;
     while(likely(total_written < len)){
     	const size_t left_to_write = len - total_written;
@@ -156,7 +162,7 @@ int camio_ostream_blob_assign_write(camio_ostream_t* this, uint8_t* buffer, size
  * Construction heavy lifting
  */
 
-camio_ostream_t* camio_ostream_blob_construct(camio_ostream_blob_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_blob_params_t* params){
+camio_ostream_t* camio_ostream_blob_construct(camio_ostream_blob_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_blob_params_t* params, camio_perf_t* perf_mon){
     if(!priv){
         eprintf_exit("blob stream supplied is null\n");
     }
@@ -185,19 +191,19 @@ camio_ostream_t* camio_ostream_blob_construct(camio_ostream_blob_t* priv, const 
     priv->ostream.fd                = -1;
 
     //Call open, because its the obvious thing to do now...
-    priv->ostream.open(&priv->ostream, descr);
+    priv->ostream.open(&priv->ostream, descr, perf_mon);
 
     //Return the generic ostream interface for the outside world
     return &priv->ostream;
 
 }
 
-camio_ostream_t* camio_ostream_blob_new( const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_blob_params_t* params){
+camio_ostream_t* camio_ostream_blob_new( const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_blob_params_t* params, camio_perf_t* perf_mon){
     camio_ostream_blob_t* priv = malloc(sizeof(camio_ostream_blob_t));
     if(!priv){
         eprintf_exit("No memory available for ostream blob creation\n");
     }
-    return camio_ostream_blob_construct(priv, descr, clock, params);
+    return camio_ostream_blob_construct(priv, descr, clock, params, perf_mon);
 }
 
 

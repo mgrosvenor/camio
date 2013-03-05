@@ -27,8 +27,15 @@
 
 
 
-int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr ){
+int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_iostream_tcp_t* priv = this->priv;
+
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
+
+
     char ip_addr[17]; //IP addr is worst case, 16 bytes long (255.255.255.255)
     char tcp_port[6]; //TCP port is wost case, 5 bytes long (65536)
     int tcp_sock_fd;
@@ -168,12 +175,14 @@ static void set_fd_blocking(int fd, int blocking){
 
 static int prepare_next(camio_iostream_tcp_t* priv, int blocking){
     if(priv->bytes_read){
+        camio_perf_event_start(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_TCP, CAMIO_PERF_COND_EXISTING_DATA);
         return priv->bytes_read;
     }
 
     set_fd_blocking(priv->iostream.selector.fd, blocking);
 
     int bytes = read(priv->iostream.selector.fd,priv->rbuffer,priv->rbuffer_size);
+    camio_perf_event_start(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_TCP, CAMIO_PERF_COND_NEW_DATA);
     if( bytes < 0){
         if(errno == EAGAIN || errno == EWOULDBLOCK){
             return 0; //Reading would have blocked, we don't want this
@@ -203,6 +212,7 @@ static int camio_iostream_tcp_start_read(camio_iostream_t* this, uint8_t** out){
 
     camio_iostream_tcp_t* priv = this->priv;
     if(priv->is_closed){
+        camio_perf_event_start(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_TCP, CAMIO_PERF_COND_NO_DATA);
         return 0;
     }
 
@@ -271,6 +281,7 @@ uint8_t* camio_iostream_tcp_end_write(camio_iostream_t* this, size_t len){
     int result = 0;
 
     if(priv->assigned_buffer){
+        camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_TCP, CAMIO_PERF_COND_WRITE_ASSIGNED);
         result = write(this->selector.fd,priv->assigned_buffer,len);
         if(result < 1){
             eprintf_exit( "Could not send on tcp socket. Error = %s\n", strerror(errno));
@@ -281,6 +292,7 @@ uint8_t* camio_iostream_tcp_end_write(camio_iostream_t* this, size_t len){
         return NULL;
     }
 
+    camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_TCP, CAMIO_PERF_COND_WRITE);
     result = write(this->selector.fd,priv->wbuffer, priv->wbuffer_size);
     if(result < 1){
         eprintf_exit( "Could not send on tcp socket. Error = %s\n", strerror(errno));
@@ -312,7 +324,7 @@ int camio_iostream_tcp_assign_write(camio_iostream_t* this, uint8_t* buffer, siz
  * Construction
  */
 
-camio_iostream_t* camio_iostream_tcp_construct(camio_iostream_tcp_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_iostream_tcp_params_t* params){
+camio_iostream_t* camio_iostream_tcp_construct(camio_iostream_tcp_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_iostream_tcp_params_t* params, camio_perf_t* perf_mon){
     if(!priv){
         eprintf_exit("tcp stream supplied is null\n");
     }
@@ -348,18 +360,18 @@ camio_iostream_t* camio_iostream_tcp_construct(camio_iostream_tcp_t* priv, const
 
 
     //Call open, because its the obvious thing to do now...
-    priv->iostream.open(&priv->iostream, descr);
+    priv->iostream.open(&priv->iostream, descr, perf_mon);
 
     //Return the generic istream interface for the outside world to use
     return &priv->iostream;
 
 }
 
-camio_iostream_t* camio_iostream_tcp_new( const camio_descr_t* descr, camio_clock_t* clock, camio_iostream_tcp_params_t* params){
+camio_iostream_t* camio_iostream_tcp_new( const camio_descr_t* descr, camio_clock_t* clock, camio_iostream_tcp_params_t* params, camio_perf_t* perf_mon){
     camio_iostream_tcp_t* priv = malloc(sizeof(camio_iostream_tcp_t));
     if(!priv){
         eprintf_exit("No memory available for tcp istream creation\n");
     }
-    return camio_iostream_tcp_construct(priv, descr, clock, params);
+    return camio_iostream_tcp_construct(priv, descr, clock, params, perf_mon);
 }
 

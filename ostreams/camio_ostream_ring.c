@@ -23,10 +23,16 @@
 #define CAMIO_OSTREAM_RING_SIZE (4 * 1024 * 1024) //4MB
 #define CAMIO_OSTREAM_RING_SLOT_SIZE (4 * 1024)  //4K
 
-int camio_ostream_ring_open(camio_ostream_t* this, const camio_descr_t* descr ){
+int camio_ostream_ring_open(camio_ostream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_ostream_ring_t* priv = this->priv;
     int ring_fd = -1;
     volatile uint8_t* ring = NULL;
+
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
+
 
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
@@ -126,8 +132,11 @@ uint8_t* camio_ostream_ring_end_write(camio_ostream_t* this, size_t len){
         return NULL;
     }
 
+    camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_OSTREAM_RING, CAMIO_PERF_COND_WRITE);
+
     //Memory copy is done implicitly here
     if(priv->assigned_buffer){
+
         memcpy((uint8_t*)priv->curr,priv->assigned_buffer,len);
         priv->assigned_buffer    = NULL;
         priv->assigned_buffer_sz = 0;
@@ -175,7 +184,7 @@ int camio_ostream_ring_assign_write(camio_ostream_t* this, uint8_t* buffer, size
  * Construction heavy lifting
  */
 
-camio_ostream_t* camio_ostream_ring_construct(camio_ostream_ring_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_ring_params_t* params){
+camio_ostream_t* camio_ostream_ring_construct(camio_ostream_ring_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_ring_params_t* params, camio_perf_t* perf_mon){
     if(!priv){
         eprintf_exit("ring stream supplied is null\n");
     }
@@ -205,19 +214,19 @@ camio_ostream_t* camio_ostream_ring_construct(camio_ostream_ring_t* priv, const 
     priv->ostream.fd                = -1;
 
     //Call open, because its the obvious thing to do now...
-    priv->ostream.open(&priv->ostream, descr);
+    priv->ostream.open(&priv->ostream, descr, perf_mon);
 
     //Return the generic ostream interface for the outside world
     return &priv->ostream;
 
 }
 
-camio_ostream_t* camio_ostream_ring_new( const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_ring_params_t* params){
+camio_ostream_t* camio_ostream_ring_new( const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_ring_params_t* params, camio_perf_t* perf_mon){
     camio_ostream_ring_t* priv = malloc(sizeof(camio_ostream_ring_t));
     if(!priv){
         eprintf_exit("No memory available for ostream ring creation\n");
     }
-    return camio_ostream_ring_construct(priv, descr, clock, params);
+    return camio_ostream_ring_construct(priv, descr, clock, params, perf_mon);
 }
 
 

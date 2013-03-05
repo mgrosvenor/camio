@@ -146,12 +146,12 @@ static int prepare_next(camio_istream_udp_t* priv, int blocking){
         }
 
         //Uh ohh, some other error! Eek! Die!
-        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_UDP,CAMIO_PERF_COND_ISTREAM_READ_ERROR);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_UDP,CAMIO_PERF_COND_READ_ERROR);
         eprintf_exit("Could not read UDP. error no=%i (%s)\n", errno, strerror(errno));
     }
 
     priv->bytes_read = bytes;
-    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_UDP,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
+    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_UDP,CAMIO_PERF_COND_NEW_DATA);
     return bytes;
 
 }

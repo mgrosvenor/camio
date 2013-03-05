@@ -26,10 +26,15 @@
 
 
 
-int camio_ostream_raw_open(camio_ostream_t* this, const camio_descr_t* descr ){
+int camio_ostream_raw_open(camio_ostream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_ostream_raw_t* priv = this->priv;
     const char* iface = descr->query;
     int raw_sock_fd;
+
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
 
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
@@ -149,6 +154,7 @@ uint8_t* camio_ostream_raw_end_write(camio_ostream_t* this, size_t len){
         return NULL;
     }
 
+    camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_OSTREAM_LOG, CAMIO_PERF_COND_WRITE);
     result = send(this->fd,priv->buffer,len,0);
     if(result < 1){
         eprintf_exit( "Could not send on raw socket. Error = %s\n", strerror(errno));
@@ -187,7 +193,7 @@ int camio_ostream_raw_assign_write(camio_ostream_t* this, uint8_t* buffer, size_
  * Construction heavy lifting
  */
 
-camio_ostream_t* camio_ostream_raw_construct(camio_ostream_raw_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_raw_params_t* params){
+camio_ostream_t* camio_ostream_raw_construct(camio_ostream_raw_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_raw_params_t* params, camio_perf_t* perf_mon){
     if(!priv){
         eprintf_exit("raw stream supplied is null\n");
     }
@@ -214,19 +220,19 @@ camio_ostream_t* camio_ostream_raw_construct(camio_ostream_raw_t* priv, const ca
     priv->ostream.fd                = -1;
 
     //Call open, because its the obvious thing to do now...
-    priv->ostream.open(&priv->ostream, descr);
+    priv->ostream.open(&priv->ostream, descr, perf_mon);
 
     //Return the generic ostream interface for the outside world
     return &priv->ostream;
 
 }
 
-camio_ostream_t* camio_ostream_raw_new( const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_raw_params_t* params){
+camio_ostream_t* camio_ostream_raw_new( const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_raw_params_t* params, camio_perf_t* perf_mon){
     camio_ostream_raw_t* priv = malloc(sizeof(camio_ostream_raw_t));
     if(!priv){
         eprintf_exit("No memory available for ostream raw creation\n");
     }
-    return camio_ostream_raw_construct(priv, descr, clock, params);
+    return camio_ostream_raw_construct(priv, descr, clock, params, perf_mon);
 }
 
 

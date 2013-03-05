@@ -103,7 +103,7 @@ static int read_to_buff(camio_istream_log_t* priv, uint8_t* new_data_ptr, int bl
         }
 
         //Uh ohh, some other error! Eek! Die!
-        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_LOG,CAMIO_PERF_COND_ISTREAM_READ_ERROR);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_LOG,CAMIO_PERF_COND_READ_ERROR);
         eprintf_exit("Could not read tlog input error no=%i (%s)\n", errno, strerror(errno));
 
     }
@@ -111,13 +111,13 @@ static int read_to_buff(camio_istream_log_t* priv, uint8_t* new_data_ptr, int bl
     //We've hit the end of the file. Close and leave.
     if(bytes == 0){
         priv->istream.close(&priv->istream);
-        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_LOG,CAMIO_PERF_COND_ISTREAM_NO_DATA);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_LOG,CAMIO_PERF_COND_NO_DATA);
         return 0;
     }
 
     //Woot
     priv->line_buffer_count += bytes;
-    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_LOG,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
+    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_LOG,CAMIO_PERF_COND_NEW_DATA);
     return bytes;
 }
 

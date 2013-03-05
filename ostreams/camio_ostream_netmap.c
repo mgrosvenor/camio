@@ -134,10 +134,17 @@ static void do_ioctl_ethtool(const char* ifname, int subcmd)
 
 }
 
-int camio_ostream_netmap_open(camio_ostream_t* this, const camio_descr_t* descr ){
+int camio_ostream_netmap_open(camio_ostream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_ostream_netmap_t* priv = this->priv;
     int netmap_fd = -1;
     struct nmreq req;
+
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
+
+
 
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
@@ -383,7 +390,7 @@ uint8_t* camio_ostream_netmap_end_write(camio_ostream_t* this, size_t len){
             size_t offset = (priv->assigned_buffer - priv->packet_buff_bottom) / 2048;
 
             //printf("ostream: fast path with offset=%lu --input from istream\n", offset);
-
+            camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_OSTREAM_NETMAP, CAMIO_PERF_COND_WRITE_ASSIGNED);
             slot->buf_idx = offset;
             slot->len     = len;
             slot->flags  |= NS_BUF_CHANGED;
@@ -399,6 +406,7 @@ uint8_t* camio_ostream_netmap_end_write(camio_ostream_t* this, size_t len){
             goto done;
         }
         else{
+            camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_OSTREAM_NETMAP, CAMIO_PERF_COND_WRITE);
             //No fast path, looks like we have to copy
             memcpy(buffer,priv->assigned_buffer,len);
             priv->assigned_buffer    = NULL;
@@ -478,7 +486,7 @@ int camio_ostream_netmap_assign_write(camio_ostream_t* this, uint8_t* buffer, si
  * Construction heavy lifting
  */
 
-camio_ostream_t* camio_ostream_netmap_construct(camio_ostream_netmap_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_netmap_params_t* params){
+camio_ostream_t* camio_ostream_netmap_construct(camio_ostream_netmap_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_netmap_params_t* params, camio_perf_t* perf_mon){
     if(!priv){
         eprintf_exit("netmap stream supplied is null\n");
     }
@@ -517,19 +525,19 @@ camio_ostream_t* camio_ostream_netmap_construct(camio_ostream_netmap_t* priv, co
     priv->ostream.fd                = -1;
 
     //Call open, because its the obvious thing to do now...
-    priv->ostream.open(&priv->ostream, descr);
+    priv->ostream.open(&priv->ostream, descr, perf_mon);
 
     //Return the generic ostream interface for the outside world
     return &priv->ostream;
 
 }
 
-camio_ostream_t* camio_ostream_netmap_new( const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_netmap_params_t* params){
+camio_ostream_t* camio_ostream_netmap_new( const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_netmap_params_t* params, camio_perf_t* perf_mon){
     camio_ostream_netmap_t* priv = malloc(sizeof(camio_ostream_netmap_t));
     if(!priv){
         eprintf_exit("No memory available for ostream netmap creation\n");
     }
-    return camio_ostream_netmap_construct(priv, descr, clock, params);
+    return camio_ostream_netmap_construct(priv, descr, clock, params, perf_mon);
 }
 
 

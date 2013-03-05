@@ -28,9 +28,13 @@ camio_perf_t* camio_perf_init(char* output_descr){
 }
 
 void camio_perf_finish(camio_perf_t* camio_perf){
+    if(!camio_perf){
+        return;
+    }
+
     char out_buff[1024];
     uint64_t out_len;
-    camio_ostream_t* out = camio_ostream_new(camio_perf->output_descr,NULL,NULL);
+    camio_ostream_t* out = camio_ostream_new(camio_perf->output_descr,NULL,NULL, NULL);
     if(!out){
         eprintf_exit("Could not create output stream for camio perf\n");
     }

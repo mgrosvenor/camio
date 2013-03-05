@@ -211,7 +211,7 @@ static int prepare_next(camio_istream_t* this){
             priv->ring          = ring; //Keep the ring for later
             //printf("Packet of size %lu is available on ring %lu at slot %u\n", priv->packet_size, i, ring->cur );
             //printf("Data on buffer idx=%u\n", ring->slot[ring->cur].buf_idx);
-            camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_NETMAP,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
+            camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_NETMAP,CAMIO_PERF_COND_NEW_DATA);
             return 1;
         }
     }

@@ -122,13 +122,13 @@ static int prepare_next(camio_istream_periodic_timeout_t* priv, int blocking){
         }
 
         //Uh ohh, some other error! Eek! Die!
-        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_PERIODIC,CAMIO_PERF_COND_ISTREAM_READ_ERROR);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_PERIODIC,CAMIO_PERF_COND_READ_ERROR);
         eprintf_exit( "Could not read periodic_timeout input error no=%i (%s)\n", errno, strerror(errno));
     }
 
     //Woot
     priv->read_size = bytes;
-    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_PERIODIC,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
+    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_PERIODIC,CAMIO_PERF_COND_NEW_DATA);
     return bytes;
 }
 

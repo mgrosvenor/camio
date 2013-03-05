@@ -37,7 +37,7 @@ typedef struct {
     struct sockaddr_in addr;            //Source address/port
     int listener_fd;                     //FD of the tcp listener
     camio_iostream_tcp_params_t* params;  //Parameters passed in from the outside
-
+    camio_perf_t* perf_mon;
 } camio_iostream_tcp_t;
 
 
@@ -46,7 +46,7 @@ typedef struct {
  *                  PUBLIC DEFS
  ********************************************************************/
 
-camio_iostream_t* camio_iostream_tcp_new( const camio_descr_t* descr, camio_clock_t* clock, camio_iostream_tcp_params_t* params);
+camio_iostream_t* camio_iostream_tcp_new( const camio_descr_t* descr, camio_clock_t* clock, camio_iostream_tcp_params_t* params, camio_perf_t* perf_mon);
 
 
 #endif /* CAMIO_IOSTREAM_TCP_H_ */

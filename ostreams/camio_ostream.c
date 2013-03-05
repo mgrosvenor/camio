@@ -20,33 +20,33 @@
 #include "camio_ostream_netmap.h"
 
 
-camio_ostream_t* camio_ostream_new( char* description, camio_clock_t* clock, void* parameters){
+camio_ostream_t* camio_ostream_new( char* description, camio_clock_t* clock, void* parameters, camio_perf_t* perf_mon){
     camio_ostream_t* result = NULL;
     camio_descr_t descr;
     camio_descr_construct(&descr);
     camio_descr_parse(description,&descr);
 
     if(strcmp(descr.protocol,"log") == 0 ){
-        result = camio_ostream_log_new(&descr,clock, parameters);
+        result = camio_ostream_log_new(&descr,clock, parameters, perf_mon);
     }
     else if(strcmp(descr.protocol,"std-log") == 0){
         camio_ostream_log_params_t params = { .fd = STDOUT_FILENO };
-        result = camio_ostream_log_new(&descr,clock, &params );
+        result = camio_ostream_log_new(&descr,clock, &params, perf_mon);
     }
     else if(strcmp(descr.protocol,"raw") == 0 ){
-            result = camio_ostream_raw_new(&descr,clock, parameters);
+            result = camio_ostream_raw_new(&descr,clock, parameters, perf_mon);
     }
     else if(strcmp(descr.protocol,"ring") == 0 ){
-            result = camio_ostream_ring_new(&descr,clock, parameters);
+            result = camio_ostream_ring_new(&descr,clock, parameters, perf_mon);
     }
     else if(strcmp(descr.protocol,"udp") == 0 ){
-            result = camio_ostream_udp_new(&descr,clock, parameters);
+            result = camio_ostream_udp_new(&descr,clock, parameters, perf_mon);
     }
     else if(strcmp(descr.protocol,"blob") == 0 ){
-            result = camio_ostream_blob_new(&descr,clock, parameters);
+            result = camio_ostream_blob_new(&descr,clock, parameters, perf_mon);
     }
     else if(strcmp(descr.protocol,"nmap") == 0 ){
-            result = camio_ostream_netmap_new(&descr,clock, parameters);
+            result = camio_ostream_netmap_new(&descr,clock, parameters, perf_mon);
     }
     else{
         eprintf_exit("Could not create ostream from description \"%s\" \n", description);

@@ -33,27 +33,36 @@ enum {
     CAMIO_PERF_EVENT_ISTREAM_RAW,
     CAMIO_PERF_EVENT_ISTREAM_RING,
     CAMIO_PERF_EVENT_ISTREAM_UDP,
+
     CAMIO_PERF_EVENT_OSTREAM_BLOB,
     CAMIO_PERF_EVENT_OSTREAM_LOG,
     CAMIO_PERF_EVENT_OSTREAM_NETMAP,
     CAMIO_PERF_EVENT_OSTREAM_RAW,
     CAMIO_PERF_EVENT_OSTREAM_RING,
     CAMIO_PERF_EVENT_OSTREAM_UDP,
+
+    CAMIO_PERF_EVENT_IOSTREAM_TCP,
+
     CAMIO_PERF_EVENT_COUNT
 };
 #define CAMIO_PERF_EVENT_ID_MAX ( (1 << 31) - 1 )  //Cannot have more than 2 billion event IDs....
 
 
-
 //CONDITION IDs
 enum{
-    CAMIO_PERF_COND_ISTREAM_NEW_DATA = 0,
-    CAMIO_PERF_COND_ISTREAM_EXISTING_DATA,
-    CAMIO_PERF_COND_ISTREAM_NO_DATA,
-    CAMIO_PERF_COND_ISTREAM_READ_ERROR,
+    CAMIO_PERF_COND_NEW_DATA = 0,
+    CAMIO_PERF_COND_EXISTING_DATA,
+    CAMIO_PERF_COND_NO_DATA,
+    CAMIO_PERF_COND_READ_ERROR,
+
+    CAMIO_PERF_COND_WRITE,
+    CAMIO_PERF_COND_WRITE_ASSIGNED,
+    CAMIO_PERF_COND_WRITE_ESCAPED,
+    CAMIO_PERF_COND_WRITE_ERROR,
+
+    CAMIO_PERF_COND_COUNT
 
 };
-
 
 
 typedef struct {
@@ -68,6 +77,12 @@ typedef struct {
 camio_perf_t* camio_perf_init();
 void camio_perf_finish(camio_perf_t* camio_perf);
 
+
+//Stolen from linux/arch/x86/include/asm/msr.h
+#define EAX_EDX_VAL(low, high)     ((low) | ((uint64_t)(high) << 32))
+#define EAX_EDX_RET(low, high)     "=a" (low), "=d" (high)
+#define DECLARE_ARGS(low, high)    uint32_t low, high
+
 //Notes:
 //- This function is written as a macro to ensure that it is inlined
 //- Generally calls to rdtsc are prepended by a call to cpuid. This is done so that the
@@ -79,10 +94,13 @@ void camio_perf_finish(camio_perf_t* camio_perf);
     if(likely(camio_perf->event_index < CAMIO_PERF_EVENTS_MAX)){                                \
         camio_perf->events[camio_perf->event_index].event_id = event;                           \
         camio_perf->events[camio_perf->event_index].cond_id  = cond;                            \
-        __asm __volatile("rdtsc" : "=A" (camio_perf->events[camio_perf->event_index].ts));      \
+        DECLARE_ARGS(lo, hi);                                                                   \
+        asm volatile("rdtsc" : EAX_EDX_RET(lo, hi));                                            \
+        camio_perf->events[camio_perf->event_index].ts       = EAX_EDX_VAL(lo, hi);             \
         camio_perf->event_index++;                                                              \
     }                                                                                           \
     camio_perf->event_count++;
+
 
 //Notes:
 //- This function is written as a macro to ensure that it is inlined
@@ -93,7 +111,9 @@ void camio_perf_finish(camio_perf_t* camio_perf);
 //  better overall performance.
 #define camio_perf_event_stop(camio_perf, event, cond)                                          \
     if(likely(camio_perf->event_index < CAMIO_PERF_EVENTS_MAX)){                                \
-        __asm __volatile("rdtsc" : "=A" (camio_perf->events[camio_perf->event_index].ts));      \
+        DECLARE_ARGS(lo, hi);                                                                   \
+        asm volatile("rdtsc" : EAX_EDX_RET(lo, hi));                                            \
+        camio_perf->events[camio_perf->event_index].ts       = EAX_EDX_VAL(lo, hi);             \
         camio_perf->events[camio_perf->event_index].event_id = event + (1<<31);                 \
         camio_perf->events[camio_perf->event_index].cond_id  = cond;                            \
         camio_perf->event_index++;                                                              \

@@ -13,12 +13,13 @@
 #include "../stream_description/camio_descr.h"
 #include "../clocks/camio_clock.h"
 #include "../selectors/camio_selector.h"
+#include "../perf/camio_perf.h"
 
 struct camio_ostream;
 typedef struct camio_ostream camio_ostream_t;
 
 struct camio_ostream{
-     int(*open)(camio_ostream_t* this, const camio_descr_t* dscr );             //Open the stream and prepare for writing, return 0 if it succeeds
+     int(*open)(camio_ostream_t* this, const camio_descr_t* dscr, camio_perf_t* perf_mon );  //Open the stream and prepare for writing, return 0 if it succeeds
      void(*close)(camio_ostream_t* this);                                       //Close the stream
      int (*ready)(camio_ostream_t* this);                                       //Returns non-zero if a call to start_write will be non-blocking
      uint8_t* (*start_write)(camio_ostream_t* this, size_t len );               //Returns a pointer to a space of size len, ready for data
@@ -33,6 +34,6 @@ struct camio_ostream{
 };
 
 
-camio_ostream_t* camio_ostream_new( char* description, camio_clock_t* clock, void* params);
+camio_ostream_t* camio_ostream_new( char* description, camio_clock_t* clock, void* params, camio_perf_t* perf_mon);
 
 #endif /* OSTREAM_H_ */

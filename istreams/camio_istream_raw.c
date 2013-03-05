@@ -121,7 +121,7 @@ static void set_fd_blocking(int fd, int blocking){
 
 static int prepare_next(camio_istream_raw_t* priv, int blocking){
     if(priv->bytes_read){
-        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RAW,CAMIO_PERF_COND_ISTREAM_EXISTING_DATA);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RAW,CAMIO_PERF_COND_EXISTING_DATA);
         return priv->bytes_read;
     }
 
@@ -129,12 +129,12 @@ static int prepare_next(camio_istream_raw_t* priv, int blocking){
 
     int bytes = recv(priv->istream.selector.fd,priv->buffer,priv->buffer_size, 0);
     if( bytes < 0){
-        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RAW,CAMIO_PERF_COND_ISTREAM_READ_ERROR);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RAW,CAMIO_PERF_COND_READ_ERROR);
         eprintf_exit("Could not receive from socket. Error = %s\n",strerror(errno));
     }
 
     priv->bytes_read = bytes;
-    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RAW,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
+    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RAW,CAMIO_PERF_COND_NEW_DATA);
     return bytes;
 
 }

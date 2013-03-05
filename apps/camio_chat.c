@@ -15,26 +15,32 @@
 #include "../types/camio_types.h"
 #include "../utils/camio_util.h"
 #include "../errors/camio_errors.h"
-
+#include "../perf/camio_perf.h"
 #include "../iostreams/camio_iostream_tcp.h"
 
 
-struct camio_cat_options_t{
+static struct camio_cat_options_t{
     camio_list_t(string) stream;
     int listen;
     char* selector;
+    char* perf_out;
 } options ;
 
 
-camio_iostream_t* iostream;
-camio_istream_t* stdinstr;
-camio_ostream_t* stdoutstr;
+static camio_iostream_t* iostream = NULL;
+static camio_istream_t* stdinstr = NULL;
+static camio_ostream_t* stdoutstr = NULL;
+static camio_perf_t* perf_mon = NULL;
 
 enum { IOSTREAM =0, INSTREAM, OUTSTREAM };
 
 
 void term(int signum){
-    iostream->delete(iostream);
+    camio_perf_finish(perf_mon);
+    if(iostream) { iostream->delete(iostream); }
+    if(stdinstr) { stdinstr->delete(stdinstr); }
+    if(stdoutstr) { stdoutstr->delete(stdoutstr); }
+
     exit(0);
 }
 
@@ -46,25 +52,27 @@ int main(int argc, char** argv){
     signal(SIGTERM, term);
     signal(SIGINT, term);
 
-
     camio_options_short_description("camio_cat");
     camio_options_add(CAMIO_OPTION_UNLIMTED,  'i', "stream",   "An iostream description such. [tcp:127.0.0.1:2000]",  CAMIO_STRINGS, &options.stream, "tcp:127.0.0.1:2000");
     camio_options_add(CAMIO_OPTION_FLAG,      'l', "listen",   "If the program is listen mode, the tx and rx pipes loop-back on each other", CAMIO_BOOL, &options.listen, 0);
     camio_options_add(CAMIO_OPTION_OPTIONAL,  's', "selector", "Selector description eg selection", CAMIO_STRING, &options.selector, "spin" );
+    camio_options_add(CAMIO_OPTION_OPTIONAL,  'p', "perf-mon", "Performance monitoring output path", CAMIO_STRING, &options.perf_out, "std-log:/tmp/camio_chat.perf" );
     camio_options_long_description("Tests I/O streams as either a client or server.");
     camio_options_parse(argc, argv);
 
     camio_selector_t* selector = camio_selector_new(options.selector,NULL,NULL);
+
+    perf_mon = camio_perf_init(options.perf_out);
     camio_iostream_tcp_params_t parms = { .listen = options.listen };
-    iostream = camio_iostream_new(options.stream.items[0],NULL,&parms);
+    iostream = camio_iostream_new(options.stream.items[0],NULL,&parms, perf_mon);
     selector->insert(selector,&iostream->selector,IOSTREAM);
 
 
 
     if(!options.listen  ){
-        stdinstr = camio_istream_new("std-log",NULL,NULL,NULL);
+        stdinstr = camio_istream_new("std-log",NULL,NULL,perf_mon);
         selector->insert(selector,&stdinstr->selector,INSTREAM);
-        stdoutstr = camio_ostream_new("std-log", NULL, NULL);
+        stdoutstr = camio_ostream_new("std-log", NULL, NULL, perf_mon);
     }
 
 

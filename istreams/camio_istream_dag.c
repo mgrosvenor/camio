@@ -84,7 +84,7 @@ static int prepare_next(camio_istream_t* this){
 
     //Simple case, there's already data waiting
     if(unlikely((size_t)priv->dag_data)){
-        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_DAG,CAMIO_PERF_COND_ISTREAM_EXISTING_DATA);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_DAG,CAMIO_PERF_COND_EXISTING_DATA);
         return priv->data_size;
     }
 
@@ -99,7 +99,7 @@ static int prepare_next(camio_istream_t* this){
 
         priv->dag_data = data;
         priv->data_size = ntohs(data->rlen);
-        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_DAG,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_DAG,CAMIO_PERF_COND_NEW_DATA);
         return priv->data_size;
     }
 

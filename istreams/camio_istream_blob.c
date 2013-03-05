@@ -70,13 +70,13 @@ void camio_istream_blob_close(camio_istream_t* this){
 static int prepare_next(camio_istream_blob_t* priv){
     if(priv->offset == priv->blob_size || priv->is_closed){
         priv->read_size = 0;
-        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_BLOB,CAMIO_PERF_COND_ISTREAM_NO_DATA);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_BLOB,CAMIO_PERF_COND_NO_DATA);
         return 0; //Nothing more to read
     }
 
     //There is data, it is unread
     priv->read_size = priv->blob_size;
-    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_BLOB,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
+    camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_BLOB,CAMIO_PERF_COND_NEW_DATA);
 
     return priv->read_size;
 }

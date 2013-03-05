@@ -96,7 +96,7 @@ static int prepare_next(camio_istream_ring_t* priv){
 
     //Simple case, there's already data waiting
     if(unlikely(priv->read_size)){
-        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_ISTREAM_EXISTING_DATA);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_EXISTING_DATA);
         return priv->read_size;
     }
 
@@ -105,7 +105,7 @@ static int prepare_next(camio_istream_ring_t* priv){
     if( likely(curr_sync_count == priv->sync_counter)){
         const uint64_t data_len  = *((volatile uint64_t*)(priv->curr + CAMIO_ISTREAM_RING_SLOT_SIZE - 2* sizeof(uint64_t)));
         priv->read_size = data_len;
-        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_ISTREAM_NEW_DATA);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_NEW_DATA);
         return data_len;
     }
 
@@ -114,7 +114,7 @@ static int prepare_next(camio_istream_ring_t* priv){
         priv->sync_counter = curr_sync_count;
         const uint64_t data_len  = *((volatile uint64_t*)(priv->curr + CAMIO_ISTREAM_RING_SLOT_SIZE - 2* sizeof(uint64_t)));
         priv->read_size = data_len;
-        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_ISTREAM_READ_ERROR);
+        camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_READ_ERROR);
         return data_len;
     }
 

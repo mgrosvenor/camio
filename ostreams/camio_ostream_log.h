@@ -28,6 +28,7 @@ typedef struct {
     uint8_t* assigned_buffer;               //Assigned write buffer
     size_t assigned_buffer_sz;              //Assigned write buffer size
     camio_ostream_log_params_t* params;      //Parameters from the outside world
+    camio_perf_t* perf_mon;
 
 } camio_ostream_log_t;
 
@@ -37,7 +38,7 @@ typedef struct {
  *                  PUBLIC DEFS
  ********************************************************************/
 
-camio_ostream_t* camio_ostream_log_new( const camio_descr_t* opts, camio_clock_t* clock, camio_ostream_log_params_t* params);
+camio_ostream_t* camio_ostream_log_new( const camio_descr_t* opts, camio_clock_t* clock, camio_ostream_log_params_t* params, camio_perf_t* perf_mon);
 
 
 
