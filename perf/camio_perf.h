@@ -12,8 +12,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define CAMIO_PERF_EVENTS_MAX (1024 * 128)
-
 
 typedef struct {
     uint64_t ts;             //Time the event was logged
@@ -69,12 +67,13 @@ typedef struct {
     char* output_descr;
     uint64_t event_count;
     uint64_t event_index;
-    camio_perf_event_t events[CAMIO_PERF_EVENTS_MAX];
+    uint64_t max_events;
+    camio_perf_event_t* events;
 
 } camio_perf_t;
 
 
-camio_perf_t* camio_perf_init();
+camio_perf_t* camio_perf_init(char* output_descr, uint64_t max_events_count);
 void camio_perf_finish(camio_perf_t* camio_perf);
 
 
@@ -91,7 +90,7 @@ void camio_perf_finish(camio_perf_t* camio_perf);
 //  on the critical path. For this reason I've decided to trade a little accuracy for
 //  better overall performance.
 #define camio_perf_event_start(camio_perf, event, cond)                                         \
-    if(likely(camio_perf->event_index < CAMIO_PERF_EVENTS_MAX)){                                \
+    if(likely(camio_perf->event_index < camio_perf->max_events)){                               \
         camio_perf->events[camio_perf->event_index].event_id = event;                           \
         camio_perf->events[camio_perf->event_index].cond_id  = cond;                            \
         DECLARE_ARGS(lo, hi);                                                                   \
@@ -110,7 +109,7 @@ void camio_perf_finish(camio_perf_t* camio_perf);
 //  on the critical path. For this reason I've decided to trade a little accuracy for
 //  better overall performance.
 #define camio_perf_event_stop(camio_perf, event, cond)                                          \
-    if(likely(camio_perf->event_index < CAMIO_PERF_EVENTS_MAX)){                                \
+    if(likely(camio_perf->event_index < camio_perf->max_events)){                               \
         DECLARE_ARGS(lo, hi);                                                                   \
         asm volatile("rdtsc" : EAX_EDX_RET(lo, hi));                                            \
         camio_perf->events[camio_perf->event_index].ts       = EAX_EDX_VAL(lo, hi);             \

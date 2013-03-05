@@ -20,7 +20,7 @@ static camio_list_t(ostream) ostreams = {};
 static camio_perf_t* perf_mon = NULL;
 
 void term(int signum){
-    if(perf_mon) { camio_perf_finish(perf_mon); }
+    camio_perf_finish(perf_mon);
     int i;
     for(i=0; i < istreams.count; i++){ istreams.items[i]->delete(istreams.items[i]);}
     for(i=0; i < ostreams.count; i++){ ostreams.items[i]->delete(ostreams.items[i]);}
@@ -48,13 +48,13 @@ int main(int argc, char** argv){
     camio_options_add(CAMIO_OPTION_OPTIONAL, 'o', "output",    "One or more output descriptions in camio format. eg log:/file.txt", CAMIO_STRINGS, &options.outputs, "std-log");
     camio_options_add(CAMIO_OPTION_OPTIONAL, 'c', "clock",     "Clock description eg tistream", CAMIO_STRING, &options.clock, "tistream" );
     camio_options_add(CAMIO_OPTION_OPTIONAL, 's', "selector",  "Selector description eg selection", CAMIO_STRING, &options.selector, "spin" );
-    camio_options_add(CAMIO_OPTION_OPTIONAL,  'p', "perf-mon", "Performance monitoring output path", CAMIO_STRING, &options.perf_out, "std-log:/tmp/camio_cat.perf" );
+    camio_options_add(CAMIO_OPTION_OPTIONAL,  'p', "perf-mon", "Performance monitoring output path", CAMIO_STRING, &options.perf_out, "log:/tmp/camio_cat.perf" );
     camio_options_long_description("Concatenates one or more inputs, into one or more outputs. \n - If no inputs are supplied, defaults to standard in.\n - If no outputs are supplied, defaults to standard out.");
     camio_options_parse(argc, argv);
 
     camio_clock_t* clock = camio_clock_new(options.clock, NULL);
     camio_selector_t* selector = camio_selector_new(options.selector,clock,NULL);
-    perf_mon = camio_perf_init(options.perf_out);
+    perf_mon = camio_perf_init(options.perf_out, 128 * 1024);
 
     camio_list_init(istream,&istreams,options.inputs.count);
     camio_list_init(ostream,&ostreams,options.outputs.count);
@@ -110,7 +110,6 @@ int main(int argc, char** argv){
                  out_buff = NULL;
             }
 
-            camio_perf_event_stop(perf_mon,CAMIO_PERF_EVENT_ISTREAM_LOG, 0);
             free_buff = out->end_write(out, len);
             if(unlikely(in->end_read(in, free_buff))){
                 printf("Overrun detected for output %i\n", i);

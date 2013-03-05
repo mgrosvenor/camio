@@ -30,6 +30,10 @@ camio_istream_t* camio_istream_new(const char* description, camio_clock_t* clock
     camio_descr_construct(&descr);
     camio_descr_parse(description,&descr);
 
+    if(!perf_mon){
+        perf_mon = camio_perf_init("",0);
+    }
+
     if(strcmp(descr.protocol,"log") == 0 ){
         result = camio_istream_log_new(&descr,clock,parameters, perf_mon);
     }

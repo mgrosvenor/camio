@@ -20,6 +20,10 @@ camio_iostream_t* camio_iostream_new(const char* description, camio_clock_t* clo
     camio_descr_construct(&descr);
     camio_descr_parse(description,&descr);
 
+    if(!perf_mon){
+        perf_mon = camio_perf_init("",0);
+    }
+
     if(strcmp(descr.protocol,"tcp") == 0 ){
         result = camio_iostream_tcp_new(&descr,clock,parameters,perf_mon);
     }

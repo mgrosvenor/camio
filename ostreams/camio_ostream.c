@@ -26,6 +26,10 @@ camio_ostream_t* camio_ostream_new( char* description, camio_clock_t* clock, voi
     camio_descr_construct(&descr);
     camio_descr_parse(description,&descr);
 
+    if(!perf_mon){
+        perf_mon = camio_perf_init("",0);
+    }
+
     if(strcmp(descr.protocol,"log") == 0 ){
         result = camio_ostream_log_new(&descr,clock, parameters, perf_mon);
     }
