@@ -8,12 +8,12 @@
 #include <memory.h>
 #include <signal.h>
 
-#include "../istreams/camio_istream.h"
-#include "../ostreams/camio_ostream.h"
-#include "../prog_options/camio_prog_options.h"
-#include "../types/camio_types.h"
-#include "../utils/camio_util.h"
-#include "../perf/camio_perf.h"
+
+#ifdef LIBCAMIO
+#include <camio/camio.h>
+#else
+#include "../camio.h"
+#endif
 
 static camio_list_t(istream) istreams = {};
 static camio_list_t(ostream) ostreams = {};
