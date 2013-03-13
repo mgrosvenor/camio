@@ -31,6 +31,26 @@ void term(int signum){
     exit(0);
 }
 
+typedef struct{
+    char* path;
+    int ver;
+    char* host;
+} http_get_t;
+
+
+
+int64_t http_delimiter(uint8_t* buffer, uint64_t size) {
+
+    uint64_t i = 0;
+    for(i = 0; i < size; i++){
+        if(buffer[i] == '\n'){
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 
 int main(int argc, char** argv){
 
@@ -48,15 +68,15 @@ int main(int argc, char** argv){
 
     perf_mon = camio_perf_init(options.perf_out, 128 * 1024);
     camio_iostream_tcp_params_t parms = { .listen = 1 };
-    iostream = camio_iostream_new(options.stream.items[0],NULL,&parms, perf_mon);
-    selector->insert(selector,&iostream->selector,IOSTREAM);
+    iostream =  camio_iostream_delimiter_new( camio_iostream_new(options.stream.items[0],NULL,&parms, perf_mon) , http_delimiter, NULL) ;
 
+    selector->insert(selector,&iostream->selector,IOSTREAM);
 
     uint8_t* buff = NULL;
     size_t len = 0;
     size_t which = ~0;
 
-
+    int i = 0;
     while(selector->count(selector)){
 
         //Wait for some input
@@ -65,9 +85,10 @@ int main(int argc, char** argv){
         switch(which){
             case IOSTREAM:
                 len = iostream->start_read(iostream,&buff);
-                iostream->assign_write(iostream,buff,len);
-                    iostream->end_write(iostream,len);
-
+                printf("%i %.*s",i, (int)len, (char*)buff );
+                i++;
+                //iostream->assign_write(iostream,buff,len);
+                //iostream->end_write(iostream,len);
                 iostream->end_read(iostream, NULL);
                 break;
         }

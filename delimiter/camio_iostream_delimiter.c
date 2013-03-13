@@ -62,17 +62,17 @@ static int prepare_next(camio_iostream_delimiter_t* priv){
             priv->working_buffer_size *= 2;
             priv->working_buffer = realloc(priv->working_buffer, priv->working_buffer_size);
         }
-        priv->working_buffer_contents_size += priv->read_buffer_size;
 
         //TODO XXX, can potentially avoid this if the delimiter says that data in read_buffer is a complete packet but have to deal
         //(potentially) with a partial fragment(s) left over in the buffer.
         memcpy(priv->working_buffer + priv->working_buffer_contents_size, priv->read_buffer, priv->read_buffer_size);
+        priv->working_buffer_contents_size += priv->read_buffer_size;
 
         priv->base->end_read(priv->base, NULL);
         //------ BASE END READ
 
         priv->read_buffer = NULL;
-        priv->result_buffer_size = 0;
+        priv->read_buffer_size = 0;
 
         uint64_t delimit_size = priv->delimit(priv->working_buffer, priv->working_buffer_contents_size);
         if(delimit_size){
