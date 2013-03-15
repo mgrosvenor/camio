@@ -39,19 +39,21 @@ int camio_istream_periodic_timeout_open(camio_istream_t* this, const camio_descr
     uint64_t temp = 0;
     size_t i = 0;
     for(; descr->query[i] != '\0'; i++){
-        if(descr->query[i] == '.'){
-            seconds = temp;
-            temp = 0;
-            continue;
-        }
+//        if(descr->query[i] == '.'){
+//            seconds = temp;
+//            temp = 0;
+//            continue;
+//        }
         temp *= 10;
         temp += (descr->query[i] - '0');
     }
     nanoseconds = temp;
 
     //Just in case the nanoseconds arg overflows
-    nanoseconds %= 1000 * 1000 * 1000;
     seconds     += nanoseconds / (1000 * 1000 * 1000);
+    nanoseconds %= 1000 * 1000 * 1000;
+
+
 
     //Set the time spec
     struct itimerspec new = { .it_value = { seconds , nanoseconds }, .it_interval = { seconds , nanoseconds } };

@@ -91,7 +91,7 @@ int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr, 
     /* Open the tcp socket */
     tcp_sock_fd = socket(AF_INET,SOCK_STREAM,0);
     if (tcp_sock_fd < 0 ){
-        eprintf_exit(strerror(errno));
+        eprintf_exit("%s\n",strerror(errno));
     }
 
     struct sockaddr_in addr;
@@ -108,8 +108,23 @@ int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr, 
         this->selector.fd = tcp_sock_fd;
     }
     else{
-        if( bind(tcp_sock_fd, (struct sockaddr *)&addr, sizeof(addr)) ){
-             eprintf_exit("%s\n",strerror(errno));
+        if(bind(tcp_sock_fd, (struct sockaddr *)&addr, sizeof(addr)) ){
+            uint64_t i = 0;
+
+            //Will wait up to two minutes trying if the address is in use.
+            //Helpful for quick restarts of apps as linux keeps some state
+            //arround for a while.
+            const int64_t seconds_per_try = 15;
+            const int64_t seconds_total = 120;
+            for(i = 0; i < seconds_total / seconds_per_try && errno == EADDRINUSE; i++){
+                wprintf("%s\n",strerror(errno));
+                bind(tcp_sock_fd, (struct sockaddr *)&addr, sizeof(addr));
+                sleep(seconds_per_try);
+            }
+
+            if(errno){
+                eprintf_exit("%s\n",strerror(errno));
+            }
         }
 
         if( listen(tcp_sock_fd, 0)){
@@ -191,8 +206,7 @@ static int prepare_next(camio_iostream_tcp_t* priv, int blocking){
     }
 
     priv->bytes_read = bytes;
-    return bytes;
-    return 0;
+    return 1;
 
 }
 
@@ -203,7 +217,6 @@ int camio_iostream_tcp_rready(camio_iostream_t* this){
     }
 
     return prepare_next(priv,0);
-    return 0;
 }
 
 

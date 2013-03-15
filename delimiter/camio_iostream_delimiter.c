@@ -28,7 +28,7 @@
 
 
 
-int camio_iostream_delimiter_open(camio_iostream_t* this){
+static int camio_iostream_delimiter_open(camio_iostream_t* this){
     camio_iostream_delimiter_t* priv = this->priv;
 
     //Allocate 1024 pages for the initial buffer, this may have to grow later.
@@ -44,19 +44,42 @@ int camio_iostream_delimiter_open(camio_iostream_t* this){
 }
 
 
-void camio_iostream_delimiter_close(camio_iostream_t* this){
+static void camio_iostream_delimiter_close(camio_iostream_t* this){
     camio_iostream_delimiter_t* priv = this->priv;
-    priv->is_closed = 1;
-    free(priv->working_buffer);
+    if(!priv->is_closed){
+        priv->is_closed = 1;
+        free(priv->working_buffer);
+        priv->working_buffer = NULL;
+        priv->working_buffer_size = 0;
+        priv->working_buffer_contents_size = 0;
+        priv->result_buffer = NULL;
+        priv->result_buffer_size = 0;
+    }
 }
 
 
 static int prepare_next(camio_iostream_delimiter_t* priv){
 
+    if(priv->working_buffer_contents_size){
+        uint64_t delimit_size = priv->delimit(priv->working_buffer, priv->working_buffer_contents_size);
+        if(delimit_size > 0){
+            priv->result_buffer = priv->working_buffer;
+            priv->result_buffer_size = delimit_size;
+            return priv->result_buffer_size;
+        }
+    }
+
+
     if(priv->base->rready(priv->base)){
 
         //----- BASE START READ
         priv->read_buffer_size = priv->base->start_read(priv->base, &priv->read_buffer);
+
+        //There is no more data to read, time to give up
+        if(priv->read_buffer_size == 0){
+            camio_iostream_delimiter_close(&priv->iostream);
+            return 1;
+        }
 
         while(priv->read_buffer_size > priv->working_buffer_size - priv->working_buffer_contents_size){
             priv->working_buffer_size *= 2;
@@ -75,10 +98,10 @@ static int prepare_next(camio_iostream_delimiter_t* priv){
         priv->read_buffer_size = 0;
 
         uint64_t delimit_size = priv->delimit(priv->working_buffer, priv->working_buffer_contents_size);
-        if(delimit_size){
+        if(delimit_size > 0){
             priv->result_buffer = priv->working_buffer;
             priv->result_buffer_size = delimit_size;
-            return priv->read_buffer_size;
+            return priv->result_buffer_size;
         }
     }
 
@@ -86,7 +109,7 @@ static int prepare_next(camio_iostream_delimiter_t* priv){
 
 }
 
-int camio_iostream_delimiter_rready(camio_iostream_t* this){
+static int camio_iostream_delimiter_rready(camio_iostream_t* this){
     camio_iostream_delimiter_t* priv = this->priv;
     if(priv->is_closed){
         return 0;
@@ -105,8 +128,13 @@ static int camio_iostream_delimiter_start_read(camio_iostream_t* this, uint8_t**
     camio_iostream_delimiter_t* priv = this->priv;
     *out = NULL;
 
+    if(priv->is_closed){
+        return 0;
+    }
+
     //Spin waiting for the stream to become available
-    while(!prepare_next(priv)){
+    while(!priv->result_buffer_size){
+        prepare_next(priv);
     }
 
     *out = priv->result_buffer;
@@ -114,19 +142,20 @@ static int camio_iostream_delimiter_start_read(camio_iostream_t* this, uint8_t**
 }
 
 
-int camio_iostream_delimiter_end_read(camio_iostream_t* this, uint8_t* free_buff){
+static int camio_iostream_delimiter_end_read(camio_iostream_t* this, uint8_t* free_buff){
     camio_iostream_delimiter_t* priv = this->priv;
     if(priv->result_buffer_size < priv->working_buffer_contents_size){
         priv->working_buffer_contents_size -= priv->result_buffer_size;
 
-        //Optimistically check if there happens to be another packet ready to go?
-        uint64_t delimit_size = priv->delimit(priv->working_buffer, priv->working_buffer_contents_size);
-        if(delimit_size){
-            //Ready for the next round with data available!
-            priv->result_buffer = priv->working_buffer;
-            priv->result_buffer_size = delimit_size;
-            return 0;
-        }
+        //This is broken
+//        //Optimistically check if there happens to be another packet ready to go?
+//        uint64_t delimit_size = priv->delimit(priv->working_buffer + priv->result_buffer_size + 1, priv->working_buffer_contents_size);
+//        if(delimit_size){
+//            //Ready for the next round with data available!
+//            priv->result_buffer = priv->working_buffer;
+//            priv->result_buffer_size = delimit_size;
+//            return 0;
+//        }
 
         //Nope, ok, bite the bullet and move stuff around.
         memmove(priv->working_buffer, priv->working_buffer + priv->result_buffer_size, priv->working_buffer_contents_size);
@@ -143,19 +172,53 @@ int camio_iostream_delimiter_end_read(camio_iostream_t* this, uint8_t* free_buff
 }
 
 
-int camio_iostream_delimiter_selector_ready(camio_selectable_t* stream){
+static int camio_iostream_delimiter_selector_ready(camio_selectable_t* stream){
     camio_iostream_t* this = container_of(stream, camio_iostream_t,selector);
     return this->rready(this);
 }
 
 
-void camio_iostream_delimiter_delete(camio_iostream_t* this){
+static void camio_iostream_delimiter_delete(camio_iostream_t* this){
     camio_iostream_delimiter_close(this);
 
     camio_iostream_delimiter_t* priv = this->priv;
     priv->base->delete(priv->base);
     free(priv);
 }
+
+
+static int camio_iostream_delimiter_wready(camio_iostream_t* this){
+    camio_iostream_delimiter_t* priv = this->priv;
+    return priv->base->wready(priv->base);
+}
+
+
+static uint8_t* camio_iostream_delimiter_start_write(camio_iostream_t* this, size_t len ){
+    camio_iostream_delimiter_t* priv = this->priv;
+    return priv->base->start_write(priv->base, len);
+}
+
+static uint8_t* camio_iostream_delimiter_end_write(camio_iostream_t* this, size_t len){
+    camio_iostream_delimiter_t* priv = this->priv;
+    return priv->base->end_write(priv->base, len);
+}
+
+
+static int camio_iostream_delimiter_can_assign_write(camio_iostream_t* this){
+    camio_iostream_delimiter_t* priv = this->priv;
+    return priv->base->can_assign_write(priv->base);
+}
+
+static int camio_iostream_delimiter_assign_write(camio_iostream_t* this, uint8_t* buffer, size_t len){
+    camio_iostream_delimiter_t* priv = this->priv;
+    return priv->base->assign_write(priv->base, buffer,len);
+}
+
+static void camio_iostream_delimiter_wsync(camio_iostream_t* this){
+    camio_iostream_delimiter_t* priv = this->priv;
+    return priv->base->wsync(priv->base);
+}
+
 
 
 /* ****************************************************
@@ -191,11 +254,12 @@ camio_iostream_t* camio_iostream_delimiter_construct(camio_iostream_delimiter_t*
     priv->iostream.rready           = camio_iostream_delimiter_rready;
     priv->iostream.selector.ready   = camio_iostream_delimiter_selector_ready;
 
-    priv->iostream.start_write      = base->start_write;
-    priv->iostream.end_write        = base->end_write;
-    priv->iostream.can_assign_write = base->can_assign_write;
-    priv->iostream.assign_write     = base->assign_write;
-    priv->iostream.wready           = base->wready;
+    priv->iostream.start_write      = camio_iostream_delimiter_start_write;
+    priv->iostream.end_write        = camio_iostream_delimiter_end_write;
+    priv->iostream.can_assign_write = camio_iostream_delimiter_can_assign_write;
+    priv->iostream.assign_write     = camio_iostream_delimiter_assign_write;
+    priv->iostream.wready           = camio_iostream_delimiter_wready;
+    priv->iostream.wsync            = camio_iostream_delimiter_wsync;
 
     priv->iostream.selector.fd      = base->selector.fd;
 
