@@ -16,6 +16,7 @@ static struct camio_cat_options_t{
     int listen;
     char* selector;
     char* perf_out;
+    char* http_root;
 } options ;
 
 
@@ -31,26 +32,60 @@ void term(int signum){
     exit(0);
 }
 
-typedef struct{
-    char* path;
-    int ver;
-    char* host;
-} http_get_t;
 
 
-
-int64_t http_delimiter(uint8_t* buffer, uint64_t size) {
-
+void http_do_get(uint8_t* buffer, uint64_t size){
+    char file_path[1024];
+    char camio_path[1024];
     uint64_t i = 0;
-    for(i = 0; i < size; i++){
-        if(buffer[i] == '\n'){
-            return i;
+    for(; i < size; i++){
+        if(buffer[i] == ' '){
+            break;
         }
     }
 
-    return -1;
+    if(i >= size){
+        wprintf("Error malformed request, could not extract filename\n");
+        return;
+    }
+
+
+    snprintf(file_path, 1024, "%s%.*s", options.http_root, (int)i, buffer);
+    snprintf(camio_path, 1024, "%s%.*s", options.http_root, (int)i, buffer);
+
+    //Should stat file path here
+
+    camio_istream_t* http_file = camio_istream_new(file_path, NULL, NULL, NULL);
+
+    uint8_t* buff;
+    uint64_t len;
+    len = http_file->start_read(http_file, &buff );
+
+
+
+
 }
 
+
+
+void http_decode(uint8_t* buffer, uint64_t size){
+    uint64_t i = 0;
+    for(i = 0; i < size; i++){
+        if(memcmp(&buffer[i],"GET ", 4) == 0){
+            http_do_get(buffer + 4, size - 4);
+        }
+    }
+}
+
+int64_t http_delimiter(uint8_t* buffer, uint64_t size) {
+    uint64_t i = 0;
+    for(i = 0; i < size - 3; i++){
+        if(memcmp(&buffer[i],"\r\n\r\n", 4) == 0){
+            return i + 4;
+        }
+    }
+    return -1;
+}
 
 int main(int argc, char** argv){
 
@@ -59,6 +94,7 @@ int main(int argc, char** argv){
 
     camio_options_short_description("camio_httpd");
     camio_options_add(CAMIO_OPTION_UNLIMTED,  'i', "stream",   "An iostream description such. [tcp:127.0.0.1:2000]",  CAMIO_STRINGS, &options.stream, "tcp:127.0.0.1:2000");
+    camio_options_add(CAMIO_OPTION_OPTIONAL,  'r', "http-root", "Root of the HTTP tree", CAMIO_STRING, &options.http_root, "http_root" );
     camio_options_add(CAMIO_OPTION_OPTIONAL,  's', "selector", "Selector description eg selection", CAMIO_STRING, &options.selector, "spin" );
     camio_options_add(CAMIO_OPTION_OPTIONAL,  'p', "perf-mon", "Performance monitoring output path", CAMIO_STRING, &options.perf_out, "log:/tmp/camio_httpd.perf" );
     camio_options_long_description("A simple HTTP server to demonstrate CamIO delimiter stream and CamIO connection server");
@@ -76,7 +112,7 @@ int main(int argc, char** argv){
     size_t len = 0;
     size_t which = ~0;
 
-    int i = 0;
+
     while(selector->count(selector)){
 
         //Wait for some input
@@ -85,11 +121,17 @@ int main(int argc, char** argv){
         switch(which){
             case IOSTREAM:
                 len = iostream->start_read(iostream,&buff);
-                printf("%i %.*s",i, (int)len, (char*)buff );
-                i++;
-                //iostream->assign_write(iostream,buff,len);
-                //iostream->end_write(iostream,len);
+
+                if(len == 0){
+                    iostream->end_read(iostream, NULL);
+                    selector->remove(selector, IOSTREAM);
+                    continue;
+                }
+
+                http_decode(buff,len);
+
                 iostream->end_read(iostream, NULL);
+
                 break;
         }
 
