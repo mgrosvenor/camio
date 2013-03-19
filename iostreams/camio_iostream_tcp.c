@@ -230,10 +230,8 @@ static int camio_iostream_tcp_start_read(camio_iostream_t* this, uint8_t** out){
     }
 
     //Called read without calling ready, they must want to block
-    if(!priv->bytes_read){
-        if(!prepare_next(priv,1)){
-            return 0;
-        }
+    while(!priv->bytes_read){
+        prepare_next(priv,1);
     }
 
     *out = priv->rbuffer;

@@ -61,7 +61,7 @@ static void camio_iostream_delimiter_close(camio_iostream_t* this){
 static int prepare_next(camio_iostream_delimiter_t* priv){
 
     if(priv->working_buffer_contents_size){
-        uint64_t delimit_size = priv->delimit(priv->working_buffer, priv->working_buffer_contents_size);
+        int64_t delimit_size = priv->delimit(priv->working_buffer, priv->working_buffer_contents_size);
         if(delimit_size > 0){
             priv->result_buffer = priv->working_buffer;
             priv->result_buffer_size = delimit_size;
@@ -97,7 +97,7 @@ static int prepare_next(camio_iostream_delimiter_t* priv){
         priv->read_buffer = NULL;
         priv->read_buffer_size = 0;
 
-        uint64_t delimit_size = priv->delimit(priv->working_buffer, priv->working_buffer_contents_size);
+        int64_t delimit_size = priv->delimit(priv->working_buffer, priv->working_buffer_contents_size);
         if(delimit_size > 0){
             priv->result_buffer = priv->working_buffer;
             priv->result_buffer_size = delimit_size;
