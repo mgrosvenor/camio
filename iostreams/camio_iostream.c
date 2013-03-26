@@ -28,7 +28,7 @@ camio_iostream_t* camio_iostream_new(const char* description, camio_clock_t* clo
     if(strcmp(descr.protocol,"tcp") == 0 ){
         result = camio_iostream_tcp_new(&descr,clock,parameters,perf_mon);
     }
-    if(strcmp(descr.protocol,"udp") == 0 ){
+    else if(strcmp(descr.protocol,"udp") == 0 ){
         result = camio_iostream_udp_new(&descr,clock,parameters,perf_mon);
     }
     else{

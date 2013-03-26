@@ -16,7 +16,7 @@
 
 #define CHECK_LEN_OK(len) \
     if(len > CAMIO_RING_SLOT_AVAIL){ \
-        eprintf_exit(0, "Length supplied (%lu) is greater than slot size (%lu, corruption is likely.\n", len, CAMIO_RING_SLOT_AVAIL ); \
+        eprintf_exit("Length supplied (%lu) is greater than slot size (%lu, corruption is likely.\n", len, CAMIO_RING_SLOT_AVAIL ); \
     }
 
 
