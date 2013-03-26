@@ -96,12 +96,14 @@ int main(int argc, char** argv){
 
             //Assign writes may imply a memory copy
             if(likely(out->can_assign_write(out))){
-                out->assign_write(out,in_buff,len);
+                //Try to write, if it fails, keep trying
+                while( out->assign_write(out,in_buff,len) < 0 ) { usleep(100* 1000); }
                 in_buff = NULL;
             }
             //Non assigned writes require memory copy
             else{
-                 out_buff = out->start_write(out,len);
+                 //Try to write, if it fails, keep trying
+                 while(! (out_buff = out->start_write(out,len)) ) { usleep(100 * 1000);}
                  if(unlikely(!out_buff)){
                      printf("Could not get an output buffer for output %i\n", i);
                      continue;

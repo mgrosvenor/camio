@@ -86,8 +86,6 @@ int camio_istream_udp_open(camio_istream_t* this, const camio_descr_t* descr, ca
     addr.sin_addr.s_addr = inet_addr(ip_addr);
     addr.sin_port        = htons(strtol(udp_port,NULL,10));
 
-    printf("%X\n", addr.sin_addr.s_addr);
-
     if( bind(udp_sock_fd, (struct sockaddr *)&addr, sizeof(addr)) ){
          eprintf_exit("%s\n", strerror(errno));
     }

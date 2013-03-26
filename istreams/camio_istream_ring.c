@@ -16,11 +16,8 @@
 #include "../errors/camio_errors.h"
 #include "../utils/camio_util.h"
 #include "../stream_description/camio_opt_parser.h"
+#include "../utils/camio_ring.h"
 
-
-//TODO XXX: These should be passed as options
-#define CAMIO_ISTREAM_RING_SIZE (4 * 1024 * 1024) //4MB
-#define CAMIO_ISTREAM_RING_SLOT_SIZE (4 * 1024)  //4K
 
 int camio_istream_ring_open(camio_istream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_istream_ring_t* priv = this->priv;
@@ -40,43 +37,27 @@ int camio_istream_ring_open(camio_istream_t* this, const camio_descr_t* descr, c
         eprintf_exit( "No filename supplied\n");
     }
 
-    ring_fd = open(descr->query, O_RDONLY);
-    //If that fails, try opening and creating the file
-    if(unlikely(ring_fd < 0)){
-        ring_fd = open(descr->query, O_RDWR | O_CREAT | O_TRUNC , (mode_t)(0666));
-        if(unlikely(ring_fd < 0)){
-            eprintf_exit("Could not open file \"%s\". Error=%s\n", descr->query, strerror(errno));
-        }
+    //Wait until there is a ring file to open.
+    while( (ring_fd = open(descr->query, O_RDWR)) < 0 ){ usleep(100 * 1000); }
 
-        //Resize the file
-        if(lseek(ring_fd, CAMIO_ISTREAM_RING_SIZE -1, SEEK_SET) < 0){
-            eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
-        }
-
-        if(write(ring_fd, "", 1) < 0){
-            eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
-        }
-
-        ring = mmap( NULL, CAMIO_ISTREAM_RING_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, ring_fd, 0);
-        if(unlikely(ring == MAP_FAILED)){
-            eprintf_exit("Could not memory map ring file \"%s\". Error=%s\n", descr->query, strerror(errno));
-        }
-
-        //Initialize the ring with 0
-        memset((uint8_t*)ring, 0, CAMIO_ISTREAM_RING_SIZE);
-    }else{
-        ring = mmap( NULL, CAMIO_ISTREAM_RING_SIZE, PROT_READ, MAP_SHARED, ring_fd, 0);
-        if(unlikely(ring == MAP_FAILED)){
-            eprintf_exit( "Could not memory map ring file \"%s\". Error=%s\n", descr->query, strerror(errno));
-        }
+    ring = mmap( NULL, CAMIO_RING_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, ring_fd, 0);
+    if(unlikely(ring == MAP_FAILED)){
+        eprintf_exit( "Could not memory map ring file \"%s\". Error=%s\n", descr->query, strerror(errno));
     }
 
+    //Remove the filename from the filesystem. Since the and reader are both still connected
+    //to the file, the space will continue to be available until they both exit.
+    if(unlink(descr->query) < 0){
+        wprintf("Could not remove ring file \"%s\". Error = \"%s\"", descr->query, strerror(errno));
+    }
 
-    priv->ring_size = CAMIO_ISTREAM_RING_SIZE;
+    priv->ring_size = CAMIO_RING_SLOT_COUNT * CAMIO_RING_SLOT_SIZE;
     this->selector.fd = ring_fd;
     priv->ring = ring;
     priv->curr = ring;
     priv->is_closed = 0;
+
+    ring_connected = 1;
 
     return 0;
 }
@@ -101,9 +82,9 @@ static int prepare_next(camio_istream_ring_t* priv){
     }
 
     //Is there new data?
-    register uint64_t curr_sync_count = *((volatile uint64_t*)(priv->curr + CAMIO_ISTREAM_RING_SLOT_SIZE - sizeof(uint64_t)));
+    register uint64_t curr_sync_count = *((volatile uint64_t*)(priv->curr + CAMIO_RING_SLOT_SIZE - sizeof(uint64_t)));
     if( likely(curr_sync_count == priv->sync_counter)){
-        const uint64_t data_len  = *((volatile uint64_t*)(priv->curr + CAMIO_ISTREAM_RING_SLOT_SIZE - 2* sizeof(uint64_t)));
+        const uint64_t data_len  = *((volatile uint64_t*)(priv->curr + CAMIO_RING_SLOT_SIZE - 2* sizeof(uint64_t)));
         priv->read_size = data_len;
         camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_NEW_DATA);
         return data_len;
@@ -112,7 +93,7 @@ static int prepare_next(camio_istream_ring_t* priv){
     if( likely(curr_sync_count > priv->sync_counter)){
         wprintf( "Ring overflow. Catching up now. Dropping payloads from %lu to %lu\n", priv->sync_counter, curr_sync_count -1);
         priv->sync_counter = curr_sync_count;
-        const uint64_t data_len  = *((volatile uint64_t*)(priv->curr + CAMIO_ISTREAM_RING_SLOT_SIZE - 2* sizeof(uint64_t)));
+        const uint64_t data_len  = *((volatile uint64_t*)(priv->curr + CAMIO_RING_SLOT_SIZE - 2* sizeof(uint64_t)));
         priv->read_size = data_len;
         camio_perf_event_start(priv->perf_mon,CAMIO_PERF_EVENT_ISTREAM_RING,CAMIO_PERF_COND_READ_ERROR);
         return data_len;
@@ -154,7 +135,7 @@ int camio_istream_ring_start_read(camio_istream_t* this, uint8_t** out){
 int camio_istream_ring_end_read(camio_istream_t* this, uint8_t* free_buff){
     camio_istream_ring_t* priv = this->priv;
 
-    register uint64_t curr_sync_count = *((volatile uint64_t*)(priv->curr + CAMIO_ISTREAM_RING_SLOT_SIZE - sizeof(uint64_t)));
+    register uint64_t curr_sync_count = *((volatile uint64_t*)(priv->curr + CAMIO_RING_SLOT_SIZE - sizeof(uint64_t)));
     if( unlikely(curr_sync_count != priv->sync_counter)){
         //wprintf(CAMIO_ERR_BUFFER_OVERRUN, "Detected overrun in ring buffer sync count is now=%lu, expected sync count=%lu\n", curr_sync_count, priv->sync_counter);
         priv->sync_counter = curr_sync_count;
@@ -164,8 +145,8 @@ int camio_istream_ring_end_read(camio_istream_t* this, uint8_t* free_buff){
 
     priv->read_size = 0;
     priv->sync_counter++;
-    priv->index = (priv->index + 1) % (CAMIO_ISTREAM_RING_SIZE / CAMIO_ISTREAM_RING_SLOT_SIZE);
-    priv->curr  = priv->ring + (priv->index * CAMIO_ISTREAM_RING_SLOT_SIZE);
+    priv->index = (priv->index + 1) % (CAMIO_RING_SLOT_COUNT);
+    priv->curr  = priv->ring + (priv->index * CAMIO_RING_SLOT_SIZE);
 
 
     return 0;
