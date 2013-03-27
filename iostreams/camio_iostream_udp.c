@@ -260,7 +260,6 @@ static uint8_t* camio_iostream_udp_end_write(camio_iostream_t* this, size_t len)
 
     if(priv->assigned_buffer){
         camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_UDP, CAMIO_PERF_COND_WRITE_ASSIGNED);
-        printf("Writing Assigned buffer=%lu buff=%p\n", priv->assigned_buffer_sz, priv->assigned_buffer);
         result = sendto(this->selector.fd,priv->assigned_buffer, priv->assigned_buffer_sz, 0, (struct sockaddr*)&priv->addr, sizeof(priv->addr));
         if(result < 0){
             eprintf_exit( "Could not send on udp socket. Error = %s\n", strerror(errno));
@@ -295,7 +294,6 @@ static int camio_iostream_udp_assign_write(camio_iostream_t* this, uint8_t* buff
     priv->assigned_buffer    = buffer;
     priv->assigned_buffer_sz = len;
 
-    printf("Assigned buffer=%lu buff=%p\n", priv->assigned_buffer_sz, priv->assigned_buffer);
     return 0;
 }
 

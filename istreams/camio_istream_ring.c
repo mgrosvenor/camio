@@ -91,7 +91,7 @@ static int prepare_next(camio_istream_ring_t* priv){
     }
 
     if( likely(curr_sync_count > priv->sync_counter)){
-        wprintf( "Ring overflow. Catching up now. Dropping payloads from %lu to %lu\n", priv->sync_counter, curr_sync_count -1);
+        //wprintf( "Ring overflow. Catching up now. Dropping payloads from %lu to %lu\n", priv->sync_counter, curr_sync_count -1);
         priv->sync_counter = curr_sync_count;
         const uint64_t data_len  = *((volatile uint64_t*)(priv->curr + CAMIO_RING_SLOT_SIZE - 2* sizeof(uint64_t)));
         priv->read_size = data_len;
