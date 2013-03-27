@@ -10,7 +10,7 @@
 #include "camio_iostream.h"
 #include "../iostreams/camio_iostream_tcp.h"
 #include "../iostreams/camio_iostream_udp.h"
-
+#include "../iostreams/camio_iostream_shmem.h"
 
 #include "../errors/camio_errors.h"
 
@@ -30,6 +30,9 @@ camio_iostream_t* camio_iostream_new(const char* description, camio_clock_t* clo
     }
     else if(strcmp(descr.protocol,"udp") == 0 ){
         result = camio_iostream_udp_new(&descr,clock,parameters,perf_mon);
+    }
+    else if(strcmp(descr.protocol,"shmem") == 0 ){
+        result = camio_iostream_shmem_new(&descr,clock,parameters,perf_mon);
     }
     else{
         eprintf_exit("Could not create iostream from description \"%s\" \n", description);
