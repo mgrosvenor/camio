@@ -59,7 +59,7 @@ static void do_listener(){
                 gettimeofday(&end,NULL);
                 const uint64_t nanos_start  = start.tv_sec * 1000 * 1000 + start.tv_usec;
                 const uint64_t nanos_end    = end.tv_sec * 1000 * 1000 + end.tv_usec;
-                printf("%c,%lu,%lu,%lu,%lu\n", 'l', total_data, nanos_end - nanos_start, error_count, total_data / ( nanos_end - nanos_start) );
+                printf("%c,%luMB/s\n", 'l', total_data / (nanos_end - nanos_start));
                 total_data = 0;
                 error_count = 0;
                 gettimeofday(&start,NULL);
@@ -99,7 +99,7 @@ static void do_sender(){
             gettimeofday(&end,NULL);
             const uint64_t nanos_start  = start.tv_sec * 1000 * 1000 + start.tv_usec;
             const uint64_t nanos_end    = end.tv_sec * 1000 * 1000 + end.tv_usec;
-            printf("%c,%lu,%lu,%lu\n", 's',total_data, nanos_end - nanos_start, total_data / (nanos_end - nanos_start));
+            printf("%c,%luMB/s\n", 's', total_data / (nanos_end - nanos_start));
             total_data = 0;
             gettimeofday(&start,NULL);
         }
