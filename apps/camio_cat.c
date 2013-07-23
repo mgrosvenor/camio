@@ -54,7 +54,7 @@ int main(int argc, char** argv){
 
     camio_clock_t* clock = camio_clock_new(options.clock, NULL);
     camio_selector_t* selector = camio_selector_new(options.selector,clock,NULL);
-    perf_mon = camio_perf_init(options.perf_out, 128 * 1024);
+    perf_mon = NULL; //camio_perf_init(options.perf_out, 128 * 1024);
 
     camio_list_init(istream,&istreams,options.inputs.count);
     camio_list_init(ostream,&ostreams,options.outputs.count);

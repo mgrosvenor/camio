@@ -35,34 +35,31 @@ void term(int signum){
 
 
 void http_do_get(uint8_t* buffer, uint64_t size){
-    char file_path[1024];
-    char camio_path[1024];
-    uint64_t i = 0;
-    for(; i < size; i++){
-        if(buffer[i] == ' '){
-            break;
-        }
+
+
+    char* match = strstr((char*)buffer," HTTP/1.1");
+    if(!match){
+        wprintf("Error malformed request, could not find HTTP/1.1\n");
     }
 
-    if(i >= size){
-        wprintf("Error malformed request, could not extract filename\n");
-        return;
-    }
+    *match = '\0'; //Null terminate the string so that we can pull out the request in-situ
+    const char* request = (char*)buffer;
+
+    char response_head[1024];
+    char response_body[1024];
+
+    snprintf(response_body,1024,"<html><h1> You requested %s </h1></html>\n\n",request);
+
+    snprintf(response_head,1024, "HTTP/1.1 200 OK\n"
+                                 "Content-Type: text/html;charset=utf-8\n"
+                                 "Connection: close\n"
+                                 "Content-Length: %lu\n\n", strlen(response_body));
 
 
-    snprintf(file_path, 1024, "%s%.*s", options.http_root, (int)i, buffer);
-    snprintf(camio_path, 1024, "%s%.*s", options.http_root, (int)i, buffer);
-
-    //Should stat file path here
-
-    camio_istream_t* http_file = camio_istream_new(file_path, NULL, NULL, NULL);
-
-    uint8_t* buff;
-    uint64_t len;
-    len = http_file->start_read(http_file, &buff );
-
-
-
+    iostream->assign_write(iostream, (uint8_t*)response_head,strlen(response_head));
+    iostream->end_write(iostream,strlen(response_head));
+    iostream->assign_write(iostream, (uint8_t*)response_body,strlen(response_body));
+    iostream->end_write(iostream,strlen(response_body));
 
 }
 
@@ -77,14 +74,17 @@ void http_decode(uint8_t* buffer, uint64_t size){
     }
 }
 
+
+//TODO XXX: Consider using http://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm
 int64_t http_delimiter(uint8_t* buffer, uint64_t size) {
-    uint64_t i = 0;
-    for(i = 0; i < size - 3; i++){
-        if(memcmp(&buffer[i],"\r\n\r\n", 4) == 0){
-            return i + 4;
-        }
+    const char* match = strstr((char*)buffer,"\r\n\r\n");
+
+    if(!match){
+        return -1; //None found
     }
-    return -1;
+
+    //Return the index directly after the delimiter
+    return (match + 4) - (char*)buffer;
 }
 
 int main(int argc, char** argv){

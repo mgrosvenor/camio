@@ -114,16 +114,19 @@ int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr, 
             //Will wait up to two minutes trying if the address is in use.
             //Helpful for quick restarts of apps as linux keeps some state
             //arround for a while.
-            const int64_t seconds_per_try = 15;
+            const int64_t seconds_per_try = 5;
             const int64_t seconds_total = 120;
             for(i = 0; i < seconds_total / seconds_per_try && errno == EADDRINUSE; i++){
-                wprintf("%s\n",strerror(errno));
+                wprintf("%i] %s --> sleeping for %i seconds...\n",i, strerror(errno), seconds_per_try);
                 bind(tcp_sock_fd, (struct sockaddr *)&addr, sizeof(addr));
                 sleep(seconds_per_try);
             }
 
             if(errno){
                 eprintf_exit("%s\n",strerror(errno));
+            }
+            else{
+                wprintf("Successfully bound after delay.\n");
             }
         }
 
