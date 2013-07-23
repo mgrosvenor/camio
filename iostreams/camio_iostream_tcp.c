@@ -51,6 +51,11 @@ int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr, 
         else{
             priv->type = CAMIO_IOSTREAM_TCP_TYPE_CLIENT;
         }
+
+        if(priv->params->fd){
+            priv->type = CAMIO_IOSTREAM_TCP_TYPE_SUBSERVER;
+        }
+
     }
 
     if(!descr->query){
@@ -100,7 +105,10 @@ int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr, 
     addr.sin_addr.s_addr = inet_addr(ip_addr);
     addr.sin_port        = htons(strtol(tcp_port,NULL,10));
 
-    if(priv->type == CAMIO_IOSTREAM_TCP_TYPE_CLIENT){
+    if(priv->type == CAMIO_IOSTREAM_TCP_TYPE_SUBSERVER){
+        this->selector.fd = priv->params->fd;
+    }
+    else if(priv->type == CAMIO_IOSTREAM_TCP_TYPE_CLIENT){
         if( connect(tcp_sock_fd,(struct sockaddr*)&addr,sizeof(addr)) ) {
             eprintf_exit("%s\n",strerror(errno));
         }

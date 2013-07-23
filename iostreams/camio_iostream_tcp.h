@@ -18,10 +18,11 @@
 
 typedef struct {
     int listen;
+    int fd;
 } camio_iostream_tcp_params_t;
 
 
-enum camio_iostream_tcp_type { CAMIO_IOSTREAM_TCP_TYPE_CLIENT, CAMIO_IOSTREAM_TCP_TYPE_SERVER};
+enum camio_iostream_tcp_type { CAMIO_IOSTREAM_TCP_TYPE_CLIENT, CAMIO_IOSTREAM_TCP_TYPE_SERVER, CAMIO_IOSTREAM_TCP_TYPE_SUBSERVER};
 
 typedef struct {
     camio_iostream_t iostream;

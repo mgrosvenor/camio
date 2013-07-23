@@ -44,15 +44,6 @@ int camio_iostream_tcps_open(camio_iostream_t* this, const camio_descr_t* descr,
         eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
-    if(priv->params){
-        if(priv->params->listen){
-            priv->type = CAMIO_IOSTREAM_TCPS_TYPE_SERVER;
-        }
-        else{
-            priv->type = CAMIO_IOSTREAM_TCPS_TYPE_CLIENT;
-        }
-    }
-
     if(!descr->query){
         eprintf_exit( "No address supplied\n");
     }
@@ -73,19 +64,6 @@ int camio_iostream_tcps_open(camio_iostream_t* this, const camio_descr_t* descr,
             break;
         }
     }
-
-
-    priv->rbuffer = malloc(getpagesize() * 1024); //Allocate 1024 page for the buffer
-    if(!priv->rbuffer){
-        eprintf_exit( "Failed to allocate transmit buffer\n");
-    }
-    priv->rbuffer_size = getpagesize() * 1024;
-
-    priv->wbuffer = malloc(getpagesize() * 1024); //Allocate 1024 page for the buffer
-    if(!priv->wbuffer){
-        eprintf_exit( "Failed to allocate receive buffer\n");
-    }
-    priv->wbuffer_size = getpagesize() * 1024;
 
 
     /* Open the tcps socket */
@@ -150,14 +128,8 @@ int camio_iostream_tcps_open(camio_iostream_t* this, const camio_descr_t* descr,
 
 void camio_iostream_tcps_close(camio_iostream_t* this){
     camio_iostream_tcps_t* priv = this->priv;
-
     close(this->selector.fd);
-    if(priv->type == CAMIO_IOSTREAM_TCPS_TYPE_SERVER){
-        close(priv->listener_fd);
-    }
 
-    free(priv->rbuffer);
-    free(priv->wbuffer);
 }
 
 static void set_fd_blocking(int fd, int blocking){
@@ -197,17 +169,18 @@ static int prepare_next(camio_iostream_tcps_t* priv, int blocking){
     }
 
 
-    priv->accept_fd = accept(tcps_sock_fd, NULL, NULL);
+    priv->accept_fd = accept(priv->iostream.selector.fd, NULL, NULL);
     if( priv->accept_fd < 0 ){
-        eprintf_exit("%s\n",strerror(errno));
+        wprintf_exit("Accept failed - %s\n",strerror(errno));
         return 0;
     }
-
 
     priv->bytes_read = sizeof(int);
     return priv->bytes_read;
 
 }
+
+
 
 int camio_iostream_tcps_rready(camio_iostream_t* this){
     camio_iostream_tcps_t* priv = this->priv;
@@ -233,7 +206,7 @@ static int camio_iostream_tcps_start_read(camio_iostream_t* this, uint8_t** out)
         prepare_next(priv,1);
     }
 
-    *out = priv->rbuffer;
+    *out = (uint8_t*)priv->accept_fd;
     size_t result = priv->bytes_read; //Strip off the newline
     priv->bytes_read = 0;
 
@@ -242,6 +215,8 @@ static int camio_iostream_tcps_start_read(camio_iostream_t* this, uint8_t** out)
 
 
 int camio_iostream_tcps_end_read(camio_iostream_t* this, uint8_t* free_buff){
+    camio_iostream_tcps_t* priv = this->priv;
+    priv->accept_fd = -1;
     return 0; //Always true for socket I/O
 }
 
@@ -258,22 +233,10 @@ void camio_iostream_tcps_delete(camio_iostream_t* this){
     free(priv);
 }
 
-
-
 //Returns a pointer to a space of size len, ready for data
 uint8_t* camio_iostream_tcps_start_write(camio_iostream_t* this, size_t len ){
-    camio_iostream_tcps_t* priv = this->priv;
-
-    //Grow the buffer if it's not big enough
-    if(len > priv->wbuffer_size){
-        priv->rbuffer = realloc(priv->wbuffer, len);
-        if(!priv->wbuffer){
-            eprintf_exit( "Could not grow message buffer\n");
-        }
-        priv->wbuffer_size = len;
-    }
-
-    return priv->wbuffer;
+    eprintf_exit("Not implemented\n");
+    return NULL;
 }
 
 //Returns non-zero if a call to start_write will be non-blocking
@@ -287,26 +250,7 @@ int camio_iostream_tcps_wready(camio_iostream_t* this){
 //Commit the data to the buffer previously allocated
 //Len must be equal to or less than len called with start_write
 uint8_t* camio_iostream_tcps_end_write(camio_iostream_t* this, size_t len){
-    camio_iostream_tcps_t* priv = this->priv;
-    int result = 0;
-
-    if(priv->assigned_buffer){
-        camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_TCPS, CAMIO_PERF_COND_WRITE_ASSIGNED);
-        result = write(this->selector.fd,priv->assigned_buffer,len);
-        if(result < 1){
-            eprintf_exit( "Could not send on tcps socket. Error = %s\n", strerror(errno));
-        }
-
-        priv->assigned_buffer    = NULL;
-        priv->assigned_buffer_sz = 0;
-        return NULL;
-    }
-
-    camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_TCPS, CAMIO_PERF_COND_WRITE);
-    result = write(this->selector.fd,priv->wbuffer, priv->wbuffer_size);
-    if(result < 1){
-        eprintf_exit( "Could not send on tcps socket. Error = %s\n", strerror(errno));
-    }
+    eprintf_exit("Not implemented\n");
     return NULL;
 }
 
@@ -317,14 +261,7 @@ int camio_iostream_tcps_can_assign_write(camio_iostream_t* this){
 
 //Assign the write buffer to the stream
 int camio_iostream_tcps_assign_write(camio_iostream_t* this, uint8_t* buffer, size_t len){
-    camio_iostream_tcps_t* priv = this->priv;
-
-    if(!buffer){
-        eprintf_exit("Assigned buffer is null.");
-    }
-
-    priv->assigned_buffer    = buffer;
-    priv->assigned_buffer_sz = len;
+    eprintf_exit("Not implemented\n");
     return 0;
 }
 
@@ -340,12 +277,7 @@ camio_iostream_t* camio_iostream_tcps_construct(camio_iostream_tcps_t* priv, con
     }
     //Initialize the local variables
     priv->is_closed         = 1;
-    priv->rbuffer           = NULL;
-    priv->rbuffer_size      = 0;
-    priv->wbuffer           = NULL;
-    priv->wbuffer_size      = 0;
     priv->bytes_read        = 0;
-    priv->type              = CAMIO_IOSTREAM_TCPS_TYPE_CLIENT;
     priv->accept_fd         = -1;
     priv->params            = params;
 
