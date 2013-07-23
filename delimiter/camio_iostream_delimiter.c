@@ -47,13 +47,13 @@ static int camio_iostream_delimiter_open(camio_iostream_t* this){
 static void camio_iostream_delimiter_close(camio_iostream_t* this){
     camio_iostream_delimiter_t* priv = this->priv;
     if(!priv->is_closed){
-        priv->is_closed = 1;
         free(priv->working_buffer);
         priv->working_buffer = NULL;
         priv->working_buffer_size = 0;
         priv->working_buffer_contents_size = 0;
         priv->result_buffer = NULL;
         priv->result_buffer_size = 0;
+        priv->is_closed = 1;
     }
 }
 
@@ -112,7 +112,7 @@ static int prepare_next(camio_iostream_delimiter_t* priv){
 static int camio_iostream_delimiter_rready(camio_iostream_t* this){
     camio_iostream_delimiter_t* priv = this->priv;
     if(priv->is_closed){
-        return 0;
+        return 1;
     }
 
     if(priv->result_buffer_size){

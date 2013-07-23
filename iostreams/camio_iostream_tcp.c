@@ -35,7 +35,7 @@ int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr, 
     }
     priv->perf_mon = perf_mon;
 
-
+    struct sockaddr_in addr;
     char ip_addr[17]; //IP addr is worst case, 16 bytes long (255.255.255.255)
     char tcp_port[6]; //TCP port is wost case, 5 bytes long (65536)
     int tcp_sock_fd;
@@ -44,42 +44,8 @@ int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr, 
         eprintf_exit( "Option(s) supplied, but none expected\n");
     }
 
-    if(priv->params){
-        if(priv->params->listen){
-            priv->type = CAMIO_IOSTREAM_TCP_TYPE_SERVER;
-        }
-        else{
-            priv->type = CAMIO_IOSTREAM_TCP_TYPE_CLIENT;
-        }
 
-        if(priv->params->fd){
-            priv->type = CAMIO_IOSTREAM_TCP_TYPE_SUBSERVER;
-        }
-
-    }
-
-    if(!descr->query){
-        eprintf_exit( "No address supplied\n");
-    }
-
-    const size_t query_len = strlen(descr->query);
-    if(query_len > 22){
-        eprintf_exit( "Query is too long %s\n", descr->query);
-    }
-
-    //Find the IP:port
-    size_t i = 0;
-    for(; i < query_len; i++ ){
-        if(descr->query[i] == ':'){
-            memcpy(ip_addr,descr->query,i);
-            ip_addr[i] = '\0';
-            memcpy(tcp_port,&descr->query[i+1],query_len - i -1);
-            tcp_port[query_len - i -1] = '\0';
-            break;
-        }
-    }
-
-
+    //Allocate the memory
     priv->rbuffer = malloc(getpagesize() * 1024); //Allocate 1024 page for the buffer
     if(!priv->rbuffer){
         eprintf_exit( "Failed to allocate transmit buffer\n");
@@ -93,26 +59,64 @@ int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr, 
     priv->wbuffer_size = getpagesize() * 1024;
 
 
-    /* Open the tcp socket */
-    tcp_sock_fd = socket(AF_INET,SOCK_STREAM,0);
-    if (tcp_sock_fd < 0 ){
-        eprintf_exit("%s\n",strerror(errno));
+
+    //Parse the parmeters
+    if(priv->params){
+        if(priv->params->fd){
+            priv->type = CAMIO_IOSTREAM_TCP_TYPE_SUBSERVER;
+            tcp_sock_fd = priv->params->fd;
+        }
+        else if(priv->params->listen){
+            priv->type = CAMIO_IOSTREAM_TCP_TYPE_SERVER;
+        }
+        else{
+            priv->type = CAMIO_IOSTREAM_TCP_TYPE_CLIENT;
+        }
     }
 
-    struct sockaddr_in addr;
-    memset(&addr,0,sizeof(addr));
-    addr.sin_family      = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(ip_addr);
-    addr.sin_port        = htons(strtol(tcp_port,NULL,10));
+    /* Open the tcp socket */
+    if(priv->type != CAMIO_IOSTREAM_TCP_TYPE_SUBSERVER){
+        if(!descr->query){
+            eprintf_exit( "No address supplied\n");
+        }
+
+        const size_t query_len = strlen(descr->query);
+        if(query_len > 22){
+            eprintf_exit( "Query is too long %s\n", descr->query);
+        }
+
+        //Find the IP:port
+        size_t i = 0;
+        for(; i < query_len; i++ ){
+            if(descr->query[i] == ':'){
+                memcpy(ip_addr,descr->query,i);
+                ip_addr[i] = '\0';
+                memcpy(tcp_port,&descr->query[i+1],query_len - i -1);
+                tcp_port[query_len - i -1] = '\0';
+                break;
+            }
+        }
+
+        memset(&addr,0,sizeof(addr));
+        addr.sin_family      = AF_INET;
+        addr.sin_addr.s_addr = inet_addr(ip_addr);
+        addr.sin_port        = htons(strtol(tcp_port,NULL,10));
+
+        tcp_sock_fd = socket(AF_INET,SOCK_STREAM,0);
+        if (tcp_sock_fd < 0 ){
+            eprintf_exit("%s\n",strerror(errno));
+        }
+    }
+
+
 
     if(priv->type == CAMIO_IOSTREAM_TCP_TYPE_SUBSERVER){
-        this->selector.fd = priv->params->fd;
+        this->selector.fd = tcp_sock_fd;
     }
     else if(priv->type == CAMIO_IOSTREAM_TCP_TYPE_CLIENT){
         if( connect(tcp_sock_fd,(struct sockaddr*)&addr,sizeof(addr)) ) {
             eprintf_exit("%s\n",strerror(errno));
         }
-
         this->selector.fd = tcp_sock_fd;
     }
     else{
@@ -171,13 +175,17 @@ int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr, 
 void camio_iostream_tcp_close(camio_iostream_t* this){
     camio_iostream_tcp_t* priv = this->priv;
 
-    close(this->selector.fd);
-    if(priv->type == CAMIO_IOSTREAM_TCP_TYPE_SERVER){
-        close(priv->listener_fd);
-    }
+    if(!priv->is_closed){
+        close(this->selector.fd);
+        if(priv->type == CAMIO_IOSTREAM_TCP_TYPE_SERVER){
+            close(priv->listener_fd);
+        }
 
-    free(priv->rbuffer);
-    free(priv->wbuffer);
+        free(priv->rbuffer);
+        free(priv->wbuffer);
+
+        priv->is_closed = 1;
+    }
 }
 
 static void set_fd_blocking(int fd, int blocking){
@@ -214,6 +222,11 @@ static int prepare_next(camio_iostream_tcp_t* priv, int blocking){
             return 0; //Reading would have blocked, we don't want this
         }
         eprintf_exit("%s\n",strerror(errno));
+    }
+
+    //We've got to the end of the stream. Close up shop.
+    if(bytes == 0){
+        camio_iostream_tcp_close(&priv->iostream);
     }
 
     priv->bytes_read = bytes;

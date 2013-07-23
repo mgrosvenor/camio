@@ -108,6 +108,12 @@ int camio_iostream_tcps_open(camio_iostream_t* this, const camio_descr_t* descr,
 
     this->selector.fd = tcps_sock_fd;
 
+    int result = listen(priv->iostream.selector.fd, 0);
+    camio_perf_event_start(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_TCPS, CAMIO_PERF_COND_NEW_DATA);
+    if(unlikely( result < 0 )){
+        eprintf_exit("%s\n",strerror(errno));
+    }
+
 
 //    int RCVBUFF_SIZE = 512 * 1024 * 1024;
 //    if (setsockopt(tcps_sock_fd, SOL_SOCKET, SO_RCVBUF, &RCVBUFF_SIZE, sizeof(RCVBUFF_SIZE)) < 0) {
@@ -127,7 +133,6 @@ int camio_iostream_tcps_open(camio_iostream_t* this, const camio_descr_t* descr,
 
 
 void camio_iostream_tcps_close(camio_iostream_t* this){
-    camio_iostream_tcps_t* priv = this->priv;
     close(this->selector.fd);
 
 }
@@ -152,26 +157,20 @@ static void set_fd_blocking(int fd, int blocking){
 }
 
 static int prepare_next(camio_iostream_tcps_t* priv, int blocking){
-    if(priv->accept_fd){
+    if(priv->accept_fd >= 0){
         camio_perf_event_start(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_TCPS, CAMIO_PERF_COND_EXISTING_DATA);
         return sizeof(int);
     }
 
     set_fd_blocking(priv->iostream.selector.fd, blocking);
 
-    int result = listen(priv->iostream->selector.fd, 0);
-    camio_perf_event_start(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_TCPS, CAMIO_PERF_COND_NEW_DATA);
-    if( result < 0){
+    priv->accept_fd = accept(priv->iostream.selector.fd, NULL, NULL);
+    if( priv->accept_fd < 0 ){
         if(errno == EAGAIN || errno == EWOULDBLOCK){
             return 0; //Reading would have blocked, we don't want this
         }
-        eprintf_exit("%s\n",strerror(errno));
-    }
 
-
-    priv->accept_fd = accept(priv->iostream.selector.fd, NULL, NULL);
-    if( priv->accept_fd < 0 ){
-        wprintf_exit("Accept failed - %s\n",strerror(errno));
+        wprintf("Accept failed - %s\n",strerror(errno));
         return 0;
     }
 
@@ -206,7 +205,7 @@ static int camio_iostream_tcps_start_read(camio_iostream_t* this, uint8_t** out)
         prepare_next(priv,1);
     }
 
-    *out = (uint8_t*)priv->accept_fd;
+    *out = (uint8_t*)(&priv->accept_fd);
     size_t result = priv->bytes_read; //Strip off the newline
     priv->bytes_read = 0;
 

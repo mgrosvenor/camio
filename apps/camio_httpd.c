@@ -21,9 +21,11 @@ static struct camio_cat_options_t{
 
 
 static camio_iostream_t* iostream = NULL;
+static camio_iostream_t* con_listener = NULL;
+
 static camio_perf_t* perf_mon = NULL;
 
-enum { IOSTREAM =0, INSTREAM, OUTSTREAM };
+enum { CONLISTEN = 0, IOSTREAM, INSTREAM, OUTSTREAM };
 
 
 void term(int signum){
@@ -66,16 +68,14 @@ void http_do_get(uint8_t* buffer, uint64_t size){
 
 
 void http_decode(uint8_t* buffer, uint64_t size){
-    uint64_t i = 0;
-    for(i = 0; i < size; i++){
-        if(memcmp(&buffer[i],"GET ", 4) == 0){
-            http_do_get(buffer + 4, size - 4);
-        }
+    char* match = strstr((char*)buffer,"GET ");
+    if(match){
+        http_do_get((uint8_t*)match + 4, size - 4);
     }
 }
 
 
-//TODO XXX: Consider using http://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm
+
 int64_t http_delimiter(uint8_t* buffer, uint64_t size) {
     const char* match = strstr((char*)buffer,"\r\n\r\n");
 
@@ -87,13 +87,16 @@ int64_t http_delimiter(uint8_t* buffer, uint64_t size) {
     return (match + 4) - (char*)buffer;
 }
 
+
+
+
 int main(int argc, char** argv){
 
     signal(SIGTERM, term);
     signal(SIGINT, term);
 
     camio_options_short_description("camio_httpd");
-    camio_options_add(CAMIO_OPTION_UNLIMTED,  'i', "stream",   "An iostream description such. [tcp:127.0.0.1:2000]",  CAMIO_STRINGS, &options.stream, "tcp:127.0.0.1:2000");
+    camio_options_add(CAMIO_OPTION_UNLIMTED,  'i', "stream",   "An iostream description such. [tcp:127.0.0.1:2000]",  CAMIO_STRINGS, &options.stream, "tcps:127.0.0.1:2000");
     camio_options_add(CAMIO_OPTION_OPTIONAL,  'r', "http-root", "Root of the HTTP tree", CAMIO_STRING, &options.http_root, "http_root" );
     camio_options_add(CAMIO_OPTION_OPTIONAL,  's', "selector", "Selector description eg selection", CAMIO_STRING, &options.selector, "spin" );
     camio_options_add(CAMIO_OPTION_OPTIONAL,  'p', "perf-mon", "Performance monitoring output path", CAMIO_STRING, &options.perf_out, "log:/tmp/camio_httpd.perf" );
@@ -103,10 +106,8 @@ int main(int argc, char** argv){
     camio_selector_t* selector = camio_selector_new(options.selector,NULL,NULL);
 
     perf_mon = camio_perf_init(options.perf_out, 128 * 1024);
-    camio_iostream_tcp_params_t parms = { .listen = 1 };
-    iostream =  camio_iostream_delimiter_new( camio_iostream_new(options.stream.items[0],NULL,&parms, perf_mon) , http_delimiter, NULL) ;
-
-    selector->insert(selector,&iostream->selector,IOSTREAM);
+    con_listener = camio_iostream_new(options.stream.items[0],NULL, NULL, perf_mon);
+    selector->insert(selector,&con_listener->selector,CONLISTEN);
 
     uint8_t* buff = NULL;
     size_t len = 0;
@@ -117,22 +118,29 @@ int main(int argc, char** argv){
 
         //Wait for some input
         which = selector->select(selector);
+        if(which == CONLISTEN){
+                len = con_listener->start_read(con_listener,&buff);
 
-        switch(which){
-            case IOSTREAM:
-                len = iostream->start_read(iostream,&buff);
+                camio_iostream_tcp_params_t params = { .listen = 0, .fd = *(int*)buff };
+                iostream =  camio_iostream_delimiter_new( camio_iostream_new("tcp",NULL,&params, perf_mon) , http_delimiter, NULL) ;
 
-                if(len == 0){
-                    iostream->end_read(iostream, NULL);
-                    selector->remove(selector, IOSTREAM);
-                    continue;
-                }
+                //We use the integer value of the iostream pointer as its identifier in the selector
+                selector->insert(selector,&iostream->selector,(size_t)iostream);
+                con_listener->end_read(con_listener, NULL);
+        }
+        else{
 
-                http_decode(buff,len);
+            camio_iostream_t* iostream = (camio_iostream_t*)which;
+            len = iostream->start_read(iostream,&buff);
 
+            if(len == 0){
                 iostream->end_read(iostream, NULL);
-
-                break;
+                selector->remove(selector, which);
+                iostream->delete(iostream);
+                continue;
+            }
+            http_decode(buff,len);
+            iostream->end_read(iostream, NULL);
         }
 
     }
@@ -142,3 +150,4 @@ int main(int argc, char** argv){
     //Unreachable
     return 0;
 }
+
