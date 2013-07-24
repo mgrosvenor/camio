@@ -43,6 +43,11 @@ int main(int argc, char** argv){
     signal(SIGTERM, term);
     signal(SIGINT, term);
 
+#ifdef LIBCAMIO
+    printf("Built using libcamio.a\n");
+#endif
+
+
     camio_options_short_description("camio_cat");
     camio_options_add(CAMIO_OPTION_UNLIMTED,  'i', "input",     "One or more input descriptions in camio format. eg log:/file.txt",  CAMIO_STRINGS, &options.inputs, "std-log"   );
     camio_options_add(CAMIO_OPTION_OPTIONAL, 'o', "output",    "One or more output descriptions in camio format. eg log:/file.txt", CAMIO_STRINGS, &options.outputs, "std-log");
@@ -54,7 +59,7 @@ int main(int argc, char** argv){
 
     camio_clock_t* clock = camio_clock_new(options.clock, NULL);
     camio_selector_t* selector = camio_selector_new(options.selector,clock,NULL);
-    perf_mon = NULL; //camio_perf_init(options.perf_out, 128 * 1024);
+    perf_mon = camio_perf_init(options.perf_out, 128 * 1024);
 
     camio_list_init(istream,&istreams,options.inputs.count);
     camio_list_init(ostream,&ostreams,options.outputs.count);

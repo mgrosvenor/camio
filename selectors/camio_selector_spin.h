@@ -25,7 +25,7 @@ typedef struct {
     size_t index;
 } camio_selector_spin_stream_t;
 
-#define CAMIO_SELECTOR_SPIN_MAX_STREAMS 32
+#define CAMIO_SELECTOR_SPIN_MAX_STREAMS 4096
 
 typedef struct {
     camio_selector_t selector;                         //Underlying selector interface

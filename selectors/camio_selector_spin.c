@@ -63,7 +63,7 @@ int camio_selector_spin_insert(camio_selector_t* this, camio_selectable_t* strea
             priv->streams[i].index = index;
             priv->streams[i].stream = stream;
             priv->stream_count++;
-            printf("[0x%016lx] selector added at index %i\n", priv->streams[i].index, i);
+            //printf("[0x%016lx] selector added at index %i\n", priv->streams[i].index, i);
             return priv->stream_count;
         }
     }
@@ -87,7 +87,7 @@ int camio_selector_spin_remove(camio_selector_t* this, size_t index){
     for(i = 0; i < CAMIO_SELECTOR_SPIN_MAX_STREAMS; i++ ){
         if(priv->streams[i].index == index){
             priv->streams[i].stream = NULL;
-            printf("[0x%016lx] selector removed at index %lu\n", priv->streams[i].index, i);
+            //printf("[0x%016lx] selector removed at index %lu\n", priv->streams[i].index, i);
             priv->stream_count--;
             return 0;
         }
@@ -118,7 +118,7 @@ size_t camio_selector_spin_select(camio_selector_t* this){
             if(likely(priv->streams[i].stream != NULL)){
                 if(likely(priv->streams[i].stream->ready(priv->streams[i].stream))){
                     priv->last = i;
-                    printf("[0x%016lx] selector fired at index %lu\n", priv->streams[i].index, i);
+                    //printf("[0x%016lx] selector fired at index %lu\n", priv->streams[i].index, i);
                     return priv->streams[i].index;
                 }
             }

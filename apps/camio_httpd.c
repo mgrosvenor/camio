@@ -34,35 +34,48 @@ void term(int signum){
     exit(0);
 }
 
-
+#define STATIC_CONTENT_SIZE (1024*23)
+char static_content[STATIC_CONTENT_SIZE] = {};
 
 void http_do_get(uint8_t* buffer, uint64_t size){
 
 
-    char* match = strstr((char*)buffer," HTTP/1.1");
+    char* match = strstr((char*)buffer," HTTP/1.");
     if(!match){
-        wprintf("Error malformed request, could not find HTTP/1.1\n");
+        wprintf("Error malformed request, could not find HTTP/1.\n");
+        printf("request string:\n%.*s\n\n",(int)size,buffer);
+        exit(-1);
+        return;
     }
 
     *match = '\0'; //Null terminate the string so that we can pull out the request in-situ
     const char* request = (char*)buffer;
-    printf("Get request for \"%s\"\n", request);
+    char response_head[1024] = {};
+    char response_body[1024] = {};
 
-    char response_head[1024];
-    char response_body[1024];
+    //printf("Get request for \"%s\"\n", request);
 
-    snprintf(response_body,1024,"<html><h1> You requested %s </h1></html>\n\n",request);
+    if(strcmp(request,"/demo.html")){
+        snprintf(response_body,1024,"<html><h1> Error 404 - Page \"%s\" Not Found </h1></html>\n\n",request);
+        snprintf(response_head,1024, "HTTP/1.1 404 Not Found\n"
+                                     "Content-Type: text/html;charset=utf-8\n"
+                                     "Content-Length: %lu\n\n", strlen(response_body));
+    }
+    else{
 
-    snprintf(response_head,1024, "HTTP/1.1 200 OK\n"
-                                 "Content-Type: text/html;charset=utf-8\n"
-                                 "Connection: close\n"
-                                 "Content-Length: %lu\n\n", strlen(response_body));
-
+        snprintf(response_body,1024,"<html><h1> You requested %s </h1></html>\n\n",request);
+        snprintf(response_head,1024, "HTTP/1.1 200 OK\n"
+                                     "Content-Type: text/html;charset=utf-8\n"
+                                     "Content-Length: %lu\n\n", strlen(response_body) + (STATIC_CONTENT_SIZE));
+    }
 
     iostream->assign_write(iostream, (uint8_t*)response_head,strlen(response_head));
     iostream->end_write(iostream,strlen(response_head));
     iostream->assign_write(iostream, (uint8_t*)response_body,strlen(response_body));
     iostream->end_write(iostream,strlen(response_body));
+    iostream->assign_write(iostream, (uint8_t*)static_content,STATIC_CONTENT_SIZE);
+    iostream->end_write(iostream,STATIC_CONTENT_SIZE);
+    iostream->close(iostream);
 
 }
 
@@ -114,6 +127,12 @@ int main(int argc, char** argv){
     size_t len = 0;
     size_t which = ~0;
 
+    int i = 0;
+    for(;i < STATIC_CONTENT_SIZE; i++){
+        static_content[i] = ' ' + i%(126-32);
+    }
+    static_content[STATIC_CONTENT_SIZE -1] = '\0';
+
 
     while(selector->count(selector)){
 
@@ -127,19 +146,19 @@ int main(int argc, char** argv){
 
                 //We use the integer value of the iostream pointer as its identifier in the selector
                 selector->insert(selector,&iostream->selector,(size_t)iostream);
-                printf("[0x%016lx] new stream\n", (size_t)iostream);
+                //printf("[0x%016lx] new stream\n", (size_t)iostream);
                 con_listener->end_read(con_listener, NULL);
         }
         else{
             iostream = (camio_iostream_t*)which;
             len = iostream->start_read(iostream,&buff);
-            printf("[0x%016lx] stream has %lu bytes data\n", (size_t)iostream, len);
+            //printf("[0x%016lx] stream has %lu bytes data\n", (size_t)iostream, len);
 
             if(len == 0){
                 iostream->end_read(iostream, NULL);
                 selector->remove(selector, which);
                 iostream->delete(iostream);
-                printf("[0x%016lx] stream deleted\n", (size_t)iostream);
+                //printf("[0x%016lx] stream deleted\n", (size_t)iostream);
                 continue;
             }
             http_decode(buff,len);

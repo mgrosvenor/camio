@@ -137,6 +137,7 @@ uint8_t* camio_ostream_udp_end_write(camio_ostream_t* this, size_t len){
     int result = 0;
 
     if(priv->assigned_buffer){
+        camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_OSTREAM_UDP, CAMIO_PERF_COND_WRITE_ASSIGNED);
         result = sendto(this->fd,priv->assigned_buffer,len,0,(struct sockaddr*)&priv->addr, sizeof(priv->addr));
         if(result < 1){
             eprintf_exit( "Could not send on udp socket. Error = %s\n", strerror(errno));
