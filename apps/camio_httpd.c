@@ -46,6 +46,7 @@ void http_do_get(uint8_t* buffer, uint64_t size){
 
     *match = '\0'; //Null terminate the string so that we can pull out the request in-situ
     const char* request = (char*)buffer;
+    printf("Get request for \"%s\"\n", request);
 
     char response_head[1024];
     char response_body[1024];
@@ -122,21 +123,23 @@ int main(int argc, char** argv){
                 len = con_listener->start_read(con_listener,&buff);
 
                 camio_iostream_tcp_params_t params = { .listen = 0, .fd = *(int*)buff };
-                iostream =  camio_iostream_delimiter_new( camio_iostream_new("tcp",NULL,&params, perf_mon) , http_delimiter, NULL) ;
+                iostream = camio_iostream_delimiter_new( camio_iostream_new("tcp",NULL,&params, perf_mon) , http_delimiter, NULL) ;
 
                 //We use the integer value of the iostream pointer as its identifier in the selector
                 selector->insert(selector,&iostream->selector,(size_t)iostream);
+                printf("[0x%016lx] new stream\n", (size_t)iostream);
                 con_listener->end_read(con_listener, NULL);
         }
         else{
-
-            camio_iostream_t* iostream = (camio_iostream_t*)which;
+            iostream = (camio_iostream_t*)which;
             len = iostream->start_read(iostream,&buff);
+            printf("[0x%016lx] stream has %lu bytes data\n", (size_t)iostream, len);
 
             if(len == 0){
                 iostream->end_read(iostream, NULL);
                 selector->remove(selector, which);
                 iostream->delete(iostream);
+                printf("[0x%016lx] stream deleted\n", (size_t)iostream);
                 continue;
             }
             http_decode(buff,len);

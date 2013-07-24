@@ -32,7 +32,6 @@ typedef struct {
     camio_selector_spin_params_t* params;              //Parameters passed in from the outside
     camio_selector_spin_stream_t streams[CAMIO_SELECTOR_SPIN_MAX_STREAMS]; //Statically allow up to n streams on this (simple) selector
     size_t stream_count;                              //Number of streams added to the slector
-    size_t stream_avail;                              //Number of streams that are non null in the selector
     size_t last;
 } camio_selector_spin_t;
 

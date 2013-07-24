@@ -57,10 +57,16 @@ int camio_selector_spin_insert(camio_selector_t* this, camio_selectable_t* strea
         return -1;
     }
 
-    priv->streams[priv->stream_count].index = index;
-    priv->streams[priv->stream_count].stream = stream;
-    priv->stream_count++;
-    priv->stream_avail++;
+    int i;
+    for(i = 0; i < CAMIO_SELECTOR_SPIN_MAX_STREAMS; i++ ){
+        if(priv->streams[i].stream == NULL){
+            priv->streams[i].index = index;
+            priv->streams[i].stream = stream;
+            priv->stream_count++;
+            printf("[0x%016lx] selector added at index %i\n", priv->streams[i].index, i);
+            return priv->stream_count;
+        }
+    }
 
     return 0;
 }
@@ -69,23 +75,23 @@ int camio_selector_spin_insert(camio_selector_t* this, camio_selectable_t* strea
 
 size_t camio_selector_spin_count(camio_selector_t* this){
     camio_selector_spin_t* priv = this->priv;
-    return priv->stream_avail;
+    return priv->stream_count;
 }
 
 
 //Remove the istream at index specified
-//For performance reasons, this stream only removes from the tail
 int camio_selector_spin_remove(camio_selector_t* this, size_t index){
     camio_selector_spin_t* priv = this->priv;
 
     size_t i = 0;
-      for(i = 0; i < CAMIO_SELECTOR_SPIN_MAX_STREAMS; i++ ){
-          if(priv->streams[i].index == index){
-              priv->streams[i].stream = NULL;
-              priv->stream_avail--;
-              return 0;
-          }
-      }
+    for(i = 0; i < CAMIO_SELECTOR_SPIN_MAX_STREAMS; i++ ){
+        if(priv->streams[i].index == index){
+            priv->streams[i].stream = NULL;
+            printf("[0x%016lx] selector removed at index %lu\n", priv->streams[i].index, i);
+            priv->stream_count--;
+            return 0;
+        }
+    }
 
     if(index >= CAMIO_SELECTOR_SPIN_MAX_STREAMS){
         wprintf( "Cannot remove this stream (%lu) from this selector. The index could not be found.\n", index);
@@ -112,6 +118,7 @@ size_t camio_selector_spin_select(camio_selector_t* this){
             if(likely(priv->streams[i].stream != NULL)){
                 if(likely(priv->streams[i].stream->ready(priv->streams[i].stream))){
                     priv->last = i;
+                    printf("[0x%016lx] selector fired at index %lu\n", priv->streams[i].index, i);
                     return priv->streams[i].index;
                 }
             }
@@ -152,7 +159,6 @@ camio_selector_t* camio_selector_spin_construct(camio_selector_spin_t* priv, cam
     //Initialize the local variables
     priv->params           = params;
     priv->stream_count     = 0;
-    priv->stream_avail     = 0;
     priv->last			   = 0;
     bzero(&priv->streams,sizeof(camio_selector_spin_stream_t) * CAMIO_SELECTOR_SPIN_MAX_STREAMS) ;
 
