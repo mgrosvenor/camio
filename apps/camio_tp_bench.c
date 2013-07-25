@@ -55,7 +55,7 @@ static void do_listener(){
                 total_data += len;
             }
 
-            if(unlikely( read_count && !(read_count % (10* 1000 * 1000)) )){
+            if(unlikely( read_count && !(read_count % (1000)) )){
                 gettimeofday(&end,NULL);
                 const uint64_t nanos_start  = start.tv_sec * 1000 * 1000 + start.tv_usec;
                 const uint64_t nanos_end    = end.tv_sec * 1000 * 1000 + end.tv_usec;
@@ -89,13 +89,14 @@ static void do_sender(){
     while(! out->start_write(out,CAMIO_RING_SLOT_AVAIL)){
         //Don't spin too hard
         usleep(100 * 1000);
+        out->end_write(out,CAMIO_RING_SLOT_AVAIL);
     }
-    out->end_write(out,CAMIO_RING_SLOT_AVAIL);
 
-    printf("Running do_listener...\n");
+
+    printf("Running do_sender...\n");
     gettimeofday(&start, NULL);
     while(1){
-        if(unlikely( write_count && !(write_count % (10 * 1000 * 1000)) )){
+        if(unlikely( write_count && !(write_count % (1000)) )){
             gettimeofday(&end,NULL);
             const uint64_t nanos_start  = start.tv_sec * 1000 * 1000 + start.tv_usec;
             const uint64_t nanos_end    = end.tv_sec * 1000 * 1000 + end.tv_usec;

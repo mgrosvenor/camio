@@ -16,6 +16,7 @@
 #include "camio_ostream_raw.h"
 #include "camio_ostream_udp.h"
 #include "camio_ostream_ring.h"
+#include "camio_ostream_bring.h"
 #include "camio_ostream_blob.h"
 #include "camio_ostream_netmap.h"
 
@@ -42,6 +43,9 @@ camio_ostream_t* camio_ostream_new( char* description, camio_clock_t* clock, voi
     }
     else if(strcmp(descr.protocol,"ring") == 0 ){
             result = camio_ostream_ring_new(&descr,clock, parameters, perf_mon);
+    }
+    else if(strcmp(descr.protocol,"bring") == 0 ){
+            result = camio_ostream_bring_new(&descr,clock, parameters, perf_mon);
     }
     else if(strcmp(descr.protocol,"udp") == 0 ){
             result = camio_ostream_udp_new(&descr,clock, parameters, perf_mon);

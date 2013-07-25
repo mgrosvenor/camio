@@ -20,6 +20,7 @@
 #include "camio_istream_blob.h"
 #include "camio_istream_netmap.h"
 #include "camio_istream_fio.h"
+#include "camio_istream_bring.h"
 
 //#ifdef HAVE_DAG_
 #include "camio_istream_dag.h"
@@ -63,6 +64,10 @@ camio_istream_t* camio_istream_new(const char* description, camio_clock_t* clock
     else if(strcmp(descr.protocol,"fio") == 0 ){
         result = camio_istream_fio_new(&descr,clock,parameters, perf_mon);
     }
+    else if(strcmp(descr.protocol,"bring") == 0 ){
+        result = camio_istream_bring_new(&descr,clock,parameters, perf_mon);
+    }
+
 
 //    else if(strcmp(descr.protocol,"pcap") == 0 ){
 //        result = camio_istream_pcap_new(&descr,clock,NULL);
