@@ -19,7 +19,8 @@
 
 
 typedef struct {
-    //No params yet
+    uint64_t slot_size;
+    uint64_t slot_count;
 } camio_istream_bring_params_t;
 
 typedef struct {
@@ -31,6 +32,8 @@ typedef struct {
     size_t read_size;                    //Size of the current read waiting (if any)
     uint64_t sync_counter;               //Synchronization counter
     uint64_t index;                      //Current index into the buffer
+    uint64_t slot_size;                  //Size of each slot in the ring
+    uint64_t slot_count;                 //Number of slots in the ring
     camio_istream_bring_params_t* params;  //Parameters passed in from the outside
     camio_perf_t* perf_mon;
 

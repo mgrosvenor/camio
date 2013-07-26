@@ -39,6 +39,17 @@ static int camio_ostream_bring_open(camio_ostream_t* this, const camio_descr_t* 
         eprintf_exit( "No filename supplied\n");
     }
 
+
+    if(priv->params){
+        priv->slot_size  = priv->params->slot_size;
+        priv->slot_count = priv->params->slot_count;
+    }
+    else{
+        priv->slot_size  = CAMIO_BRING_SLOT_SIZE_DEFAULT;
+        priv->slot_count = CAMIO_BRING_SLOT_COUNT_DEFAULT;
+    }
+
+
     //Make a local copy of the filename in case the descr pointer goes away (probable)
     size_t filename_len = strlen(descr->query);
     priv->filename = malloc(filename_len + 1);
@@ -63,7 +74,7 @@ static int camio_ostream_bring_open(camio_ostream_t* this, const camio_descr_t* 
         }
 
         //Resize the file
-        if(lseek(bring_fd, CAMIO_BRING_MEM_SIZE -1, SEEK_SET) < 0){
+        if(lseek(bring_fd, CAMIO_BRING_MEM_SIZE(priv->slot_count, priv->slot_size) -1, SEEK_SET) < 0){
             eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
         }
 
@@ -71,16 +82,16 @@ static int camio_ostream_bring_open(camio_ostream_t* this, const camio_descr_t* 
             eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
         }
 
-        bring = mmap( NULL, CAMIO_BRING_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, bring_fd, 0);
+        bring = mmap( NULL, CAMIO_BRING_MEM_SIZE(priv->slot_count, priv->slot_size), PROT_READ | PROT_WRITE, MAP_SHARED, bring_fd, 0);
         if(unlikely(bring == MAP_FAILED)){
             eprintf_exit("Could not memory map bring file \"%s\". Error=%s\n", descr->query, strerror(errno));
         }
 
         //Initialize the bring with 0
-        memset((uint8_t*)bring, 0, CAMIO_BRING_MEM_SIZE);
+        memset((uint8_t*)bring, 0, CAMIO_BRING_MEM_SIZE(priv->slot_count, priv->slot_size));
     }
 
-    priv->bring_size = CAMIO_BRING_MEM_SIZE;
+    priv->bring_size = CAMIO_BRING_MEM_SIZE(priv->slot_count, priv->slot_size);
     this->fd = bring_fd;
     priv->bring = bring;
     priv->curr = bring;
@@ -109,7 +120,7 @@ static uint8_t* camio_ostream_bring_start_write(camio_ostream_t* this, size_t le
     }
 
     while(1){
-        register const uint64_t curr_sync_count = *((volatile uint64_t*)(priv->curr + CAMIO_BRING_SLOT_SIZE - sizeof(uint64_t)));
+        register const uint64_t curr_sync_count = *((volatile uint64_t*)(priv->curr + priv->slot_size - sizeof(uint64_t)));
         if(curr_sync_count == 0x00ULL){ //The istream will set this to zero when it's done
             break;
         }
@@ -149,11 +160,11 @@ static uint8_t* camio_ostream_bring_end_write(camio_ostream_t* this, size_t len)
 
 
     priv->sync_count++;
-    *(volatile uint64_t*)(priv->curr + CAMIO_BRING_SLOT_SIZE-2*sizeof(uint64_t)) = len;
-    *(volatile uint64_t*)(priv->curr + CAMIO_BRING_SLOT_SIZE-1*sizeof(uint64_t)) = priv->sync_count; //Write is now committed
+    *(volatile uint64_t*)(priv->curr + priv->slot_size-2*sizeof(uint64_t)) = len;
+    *(volatile uint64_t*)(priv->curr + priv->slot_size-1*sizeof(uint64_t)) = priv->sync_count; //Write is now committed
 
-    priv->index = (priv->index + 1) % ( CAMIO_BRING_SLOT_COUNT);
-    priv->curr  = priv->bring + (priv->index * CAMIO_BRING_SLOT_SIZE);
+    priv->index = (priv->index + 1) % ( priv->slot_count);
+    priv->curr  = priv->bring + (priv->index * priv->slot_size);
 
     return NULL;
 }
@@ -179,7 +190,7 @@ static int camio_ostream_bring_assign_write(camio_ostream_t* this, uint8_t* buff
     }
 
     while(1){
-        register const uint64_t curr_sync_count = *((volatile uint64_t*)(priv->curr + CAMIO_BRING_SLOT_SIZE - sizeof(uint64_t)));
+        register const uint64_t curr_sync_count = *((volatile uint64_t*)(priv->curr + priv->slot_size - sizeof(uint64_t)));
         if(curr_sync_count == 0x00ULL){ //The istream will set this to zero when it's done
             break;
         }
