@@ -32,7 +32,7 @@ static int camio_iostream_delimiter_open(camio_iostream_t* this){
     camio_iostream_delimiter_t* priv = this->priv;
 
     //Allocate 1024 pages for the initial buffer, this may have to grow later.
-    priv->working_buffer_size = getpagesize() * 1024;
+    priv->working_buffer_size = 4* getpagesize() * 1024;
     priv->working_buffer = malloc(priv->working_buffer_size);
     if(!priv->working_buffer){
         eprintf_exit( "Failed to allocate working buffer\n");
@@ -78,6 +78,7 @@ static int prepare_next(camio_iostream_delimiter_t* priv){
 
         //----- BASE START READ
         priv->read_buffer_size = priv->base->start_read(priv->base, &priv->read_buffer);
+	printf("Read another %lubytes\n", priv->read_buffer_size);
 
         //There is no more data to read, time to give up
         if(priv->read_buffer_size == 0){
@@ -86,13 +87,16 @@ static int prepare_next(camio_iostream_delimiter_t* priv){
         }
 
         while(priv->read_buffer_size > priv->working_buffer_size - priv->working_buffer_contents_size){
+            printf("Growing working buffer from %lu to %lu\n", priv->working_buffer_size, priv->working_buffer_size * 2 );
             priv->working_buffer_size *= 2;
             priv->working_buffer = realloc(priv->working_buffer, priv->working_buffer_size);
         }
 
         //TODO XXX, can potentially avoid this if the delimiter says that data in read_buffer is a complete packet but have to deal
         //(potentially) with a partial fragment(s) left over in the buffer.
-        memcpy(priv->working_buffer + priv->working_buffer_contents_size, priv->read_buffer, priv->read_buffer_size);
+	        
+	printf("Adding %lu bytes at %p (offset=%lu)\n", priv->read_buffer_size, priv->working_buffer + priv->working_buffer_contents_size, priv->working_buffer_contents_size);
+	memcpy(priv->working_buffer + priv->working_buffer_contents_size, priv->read_buffer, priv->read_buffer_size);
         priv->working_buffer_contents_size += priv->read_buffer_size;
 
         priv->base->end_read(priv->base, NULL);
@@ -105,6 +109,7 @@ static int prepare_next(camio_iostream_delimiter_t* priv){
         if(delimit_size > 0){
             priv->result_buffer = priv->working_buffer;
             priv->result_buffer_size = delimit_size;
+            printf("Found packet size=%lu\n", priv->result_buffer_size);
             return priv->result_buffer_size;
         }
     }
@@ -141,6 +146,7 @@ static int camio_iostream_delimiter_start_read(camio_iostream_t* this, uint8_t**
         prepare_next(priv);
     }
 
+    //printf("result_buffer=%p, result_buffer_size=%lu, result_offset=%lu, working_size=%lu content_size=%lu content leftover=%lu\n",  priv->result_buffer, priv->result_buffer_size, priv->result_buffer - priv->working_buffer, priv->working_buffer_size, priv->working_buffer_contents_size, priv->working_buffer_contents_size % 288);
     *out = priv->result_buffer;
     return  priv->result_buffer_size;
 }
@@ -148,11 +154,13 @@ static int camio_iostream_delimiter_start_read(camio_iostream_t* this, uint8_t**
 
 static int camio_iostream_delimiter_end_read(camio_iostream_t* this, uint8_t* free_buff){
     camio_iostream_delimiter_t* priv = this->priv;
+
+    uint8_t* result_head_next = priv->result_buffer + priv->result_buffer_size ;
+
     if(priv->result_buffer_size < priv->working_buffer_contents_size){
         priv->working_buffer_contents_size -= priv->result_buffer_size;
 
         //Optimistically check if there happens to be another packet ready to go?
-        uint8_t* result_head_next = priv->result_buffer + priv->result_buffer_size ;
         uint64_t delimit_size = priv->delimit(result_head_next, priv->working_buffer_contents_size);
         if(delimit_size){
             //Ready for the next round with data available!
@@ -162,10 +170,17 @@ static int camio_iostream_delimiter_end_read(camio_iostream_t* this, uint8_t* fr
         }
 
         //Nope, ok, bite the bullet and move stuff around.
+	printf("Doing mem move of %lu from %p to %p (total=%lu)\n", priv->working_buffer_contents_size, result_head_next, priv->working_buffer, result_head_next - priv->working_buffer);
         memmove(priv->working_buffer, result_head_next, priv->working_buffer_contents_size);
     }
-    else{
-        priv->working_buffer_contents_size = 0;
+    else{	
+	if(priv->working_buffer_contents_size == priv->result_buffer_size){
+	    priv->working_buffer_contents_size = 0; 
+	}
+	else{
+	    memmove(priv->working_buffer, result_head_next, priv->working_buffer_contents_size);	    
+	}
+	
     }
 
     //Ready for the next round
