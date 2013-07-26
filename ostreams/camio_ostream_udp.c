@@ -134,13 +134,33 @@ int camio_ostream_udp_ready(camio_ostream_t* this){
 //Len must be equal to or less than len called with start_write
 uint8_t* camio_ostream_udp_end_write(camio_ostream_t* this, size_t len){
     camio_ostream_udp_t* priv = this->priv;
-    int result = 0;
+    int written = 0;
 
     if(priv->assigned_buffer){
         camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_OSTREAM_UDP, CAMIO_PERF_COND_WRITE_ASSIGNED);
-        result = sendto(this->fd,priv->assigned_buffer,len,0,(struct sockaddr*)&priv->addr, sizeof(priv->addr));
-        if(result < 1){
-            eprintf_exit( "Could not send on udp socket. Error = %s\n", strerror(errno));
+
+
+        uint8_t* data_head = priv->assigned_buffer;
+        uint64_t left_over = len;
+
+        while(1){
+            written = sendto(this->fd,priv->assigned_buffer,len,0,(struct sockaddr*)&priv->addr, sizeof(priv->addr));
+
+            if(unlikely(written < 0)){
+                if(errno == EAGAIN){
+                    continue;
+                }
+                else{
+                    eprintf_exit( "Could not send on tcp socket. Error = %s\n", strerror(errno));
+                }
+            }
+            else if(unlikely( written < left_over) ){
+                data_head += written;
+                left_over = left_over - written;
+            }
+            else{
+                break;
+            }
         }
 
         priv->assigned_buffer    = NULL;
@@ -148,11 +168,13 @@ uint8_t* camio_ostream_udp_end_write(camio_ostream_t* this, size_t len){
         return NULL;
     }
 
-    camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_OSTREAM_UDP, CAMIO_PERF_COND_WRITE);
-    result = sendto(this->fd,priv->buffer,len,0,(struct sockaddr*)&priv->addr, sizeof(priv->addr));
-    if(result < 1){
-        eprintf_exit( "Could not send on udp socket. Error = %s\n", strerror(errno));
-    }
+
+    eprintf_exit("Not implemented\n");
+//    camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_OSTREAM_UDP, CAMIO_PERF_COND_WRITE);
+//    result = sendto(this->fd,priv->buffer,len,0,(struct sockaddr*)&priv->addr, sizeof(priv->addr));
+//    if(result < 1){
+//        eprintf_exit( "Could not send on udp socket. Error = %s\n", strerror(errno));
+//    }
     return NULL;
 }
 

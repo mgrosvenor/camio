@@ -60,6 +60,10 @@ static void camio_iostream_delimiter_close(camio_iostream_t* this){
 
 static int prepare_next(camio_iostream_delimiter_t* priv){
 
+    if(priv->result_buffer && priv->result_buffer_size){
+        return priv->result_buffer_size;
+    }
+
     if(priv->working_buffer_contents_size){
         int64_t delimit_size = priv->delimit(priv->working_buffer, priv->working_buffer_contents_size);
         if(delimit_size > 0){
@@ -147,18 +151,18 @@ static int camio_iostream_delimiter_end_read(camio_iostream_t* this, uint8_t* fr
     if(priv->result_buffer_size < priv->working_buffer_contents_size){
         priv->working_buffer_contents_size -= priv->result_buffer_size;
 
-        //This is broken
-//        //Optimistically check if there happens to be another packet ready to go?
-//        uint64_t delimit_size = priv->delimit(priv->working_buffer + priv->result_buffer_size + 1, priv->working_buffer_contents_size);
-//        if(delimit_size){
-//            //Ready for the next round with data available!
-//            priv->result_buffer = priv->working_buffer;
-//            priv->result_buffer_size = delimit_size;
-//            return 0;
-//        }
+        //Optimistically check if there happens to be another packet ready to go?
+        uint8_t* result_head_next = priv->result_buffer + priv->result_buffer_size ;
+        uint64_t delimit_size = priv->delimit(result_head_next, priv->working_buffer_contents_size);
+        if(delimit_size){
+            //Ready for the next round with data available!
+            priv->result_buffer = result_head_next;
+            priv->result_buffer_size = delimit_size;
+            return 0;
+        }
 
         //Nope, ok, bite the bullet and move stuff around.
-        memmove(priv->working_buffer, priv->working_buffer + priv->result_buffer_size, priv->working_buffer_contents_size);
+        memmove(priv->working_buffer, result_head_next, priv->working_buffer_contents_size);
     }
     else{
         priv->working_buffer_contents_size = 0;

@@ -17,5 +17,6 @@
 #include "stream_description/camio_descr.h"
 #include "utils/camio_util.h"
 #include "perf/camio_perf.h"
+#include "iostreams/camio_iostream_wrapper.h"
 
 

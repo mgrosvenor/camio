@@ -58,6 +58,7 @@ int camio_istream_ring_open(camio_istream_t* this, const camio_descr_t* descr, c
     priv->is_closed = 0;
 
     ring_connected = 1;
+    //printf("CAMIO_RING: Set Ring TO CONNECTED\n");
 
     return 0;
 }
@@ -83,6 +84,9 @@ static int prepare_next(camio_istream_ring_t* priv){
 
     //Is there new data?
     register uint64_t curr_sync_count = *((volatile uint64_t*)(priv->curr + CAMIO_RING_SLOT_SIZE - sizeof(uint64_t)));
+//    if(curr_sync_count != 0){
+//        printf("CAMIO_RING: istream[%i]: sync count=%lu priv=%lu\n", priv->istream.selector.fd, curr_sync_count, priv->sync_counter);
+//    }
     if( likely(curr_sync_count == priv->sync_counter)){
         const uint64_t data_len  = *((volatile uint64_t*)(priv->curr + CAMIO_RING_SLOT_SIZE - 2* sizeof(uint64_t)));
         priv->read_size = data_len;

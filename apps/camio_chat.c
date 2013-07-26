@@ -8,16 +8,13 @@
 #include <memory.h>
 #include <signal.h>
 
-#include "../istreams/camio_istream.h"
-#include "../ostreams/camio_ostream.h"
-#include "../iostreams/camio_iostream.h"
-#include "../prog_options/camio_prog_options.h"
-#include "../types/camio_types.h"
-#include "../utils/camio_util.h"
-#include "../errors/camio_errors.h"
-#include "../perf/camio_perf.h"
+#ifdef LIBCAMIO
+#include <camio/camio.h>
+#include <camio/iostreams/camio_iostream_tcp.h>
+#else
+#include "../camio.h"
 #include "../iostreams/camio_iostream_tcp.h"
-#include "../iostreams/camio_iostream_wrapper.h"
+#endif
 
 
 static struct camio_cat_options_t{
@@ -52,6 +49,10 @@ void term(int signum){
 
 
 int main(int argc, char** argv){
+
+#ifdef LIBCAMIO
+    printf("This version of camio_chat is built using libcamio.a\n");
+#endif
 
     signal(SIGTERM, term);
     signal(SIGINT, term);
@@ -92,7 +93,6 @@ int main(int argc, char** argv){
     uint8_t* buff = NULL;
     size_t len = 0;
     size_t which = ~0;
-
 
     while(selector->count(selector)){
 

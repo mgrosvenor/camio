@@ -55,7 +55,8 @@ static int camio_ostream_ring_open(camio_ostream_t* this, const camio_descr_t* d
             eprintf_exit("Could remove stale ring file \"%s\". Error=%s\n", descr->query, strerror(errno));
         }
 
-    }else{
+    }
+    else{
         ring_fd = open(descr->query, O_RDWR | O_CREAT | O_TRUNC , (mode_t)(0666));
         if(unlikely(ring_fd < 0)){
             eprintf_exit("Could not open file \"%s\". Error=%s\n", descr->query, strerror(errno));
@@ -125,6 +126,7 @@ static uint8_t* camio_ostream_ring_end_write(camio_ostream_t* this, size_t len){
     CHECK_LEN_OK(len);
 
     if(!ring_connected){
+        //printf("CAMIO_RING: Unconnected ring\n");
         return NULL;
     }
 
@@ -142,6 +144,7 @@ static uint8_t* camio_ostream_ring_end_write(camio_ostream_t* this, size_t len){
     priv->sync_count++;
     *(volatile uint64_t*)(priv->curr + CAMIO_RING_SLOT_SIZE-2*sizeof(uint64_t)) = len;
     *(volatile uint64_t*)(priv->curr + CAMIO_RING_SLOT_SIZE-1*sizeof(uint64_t)) = priv->sync_count; //Write is now committed
+    //printf("CAMIO_RING: Sync count = %lu\n", priv->sync_count);
 
     priv->index = (priv->index + 1) % ( CAMIO_RING_SLOT_COUNT);
     priv->curr  = priv->ring + (priv->index * CAMIO_RING_SLOT_SIZE);

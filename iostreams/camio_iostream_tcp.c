@@ -38,7 +38,7 @@ int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr, 
     struct sockaddr_in addr;
     char ip_addr[17]; //IP addr is worst case, 16 bytes long (255.255.255.255)
     char tcp_port[6]; //TCP port is wost case, 5 bytes long (65536)
-    int tcp_sock_fd;
+    int tcp_sock_fd = -1;
 
     if(unlikely(camio_descr_has_opts(descr->opt_head))){
         eprintf_exit( "Option(s) supplied, but none expected\n");
@@ -313,13 +313,32 @@ int camio_iostream_tcp_wready(camio_iostream_t* this){
 //Len must be equal to or less than len called with start_write
 uint8_t* camio_iostream_tcp_end_write(camio_iostream_t* this, size_t len){
     camio_iostream_tcp_t* priv = this->priv;
-    int result = 0;
+    int64_t written = 0;
 
     if(priv->assigned_buffer){
         camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_TCP, CAMIO_PERF_COND_WRITE_ASSIGNED);
-        result = write(this->selector.fd,priv->assigned_buffer,len);
-        if(result < 1){
-            eprintf_exit( "Could not send on tcp socket. Error = %s\n", strerror(errno));
+
+        uint8_t* data_head = priv->assigned_buffer;
+        uint64_t left_over = len;
+
+        while(1){
+            written = write(this->selector.fd,data_head,left_over);
+
+            if(unlikely(written < 0)){
+                if(errno == EAGAIN){
+                    continue;
+                }
+                else{
+                    eprintf_exit( "Could not send on tcp socket. Error = %s\n", strerror(errno));
+                }
+            }
+            else if(unlikely( written < left_over) ){
+                data_head += written;
+                left_over = left_over - written;
+            }
+            else{
+                break;
+            }
         }
 
         priv->assigned_buffer    = NULL;
@@ -327,11 +346,14 @@ uint8_t* camio_iostream_tcp_end_write(camio_iostream_t* this, size_t len){
         return NULL;
     }
 
-    camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_TCP, CAMIO_PERF_COND_WRITE);
-    result = write(this->selector.fd,priv->wbuffer, priv->wbuffer_size);
-    if(result < 1){
-        eprintf_exit( "Could not send on tcp socket. Error = %s\n", strerror(errno));
-    }
+
+
+    eprintf_exit("Not implemented\n");
+//    camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_IOSTREAM_TCP, CAMIO_PERF_COND_WRITE);
+//    result = write(this->selector.fd,priv->wbuffer, priv->wbuffer_size);
+//    if(result < 1){
+//        eprintf_exit( "Could not send on tcp socket. Error = %s\n", strerror(errno));
+//    }
     return NULL;
 }
 
