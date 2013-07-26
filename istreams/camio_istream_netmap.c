@@ -83,7 +83,7 @@ static void do_ioctl_ethtool(const char* ifname, int subcmd)
 
 }
 
-int camio_istream_netmap_open(camio_istream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
+static int camio_istream_netmap_open(camio_istream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_istream_netmap_t* priv = this->priv;
     int netmap_fd = -1;
     struct nmreq req;
@@ -178,7 +178,7 @@ int camio_istream_netmap_open(camio_istream_t* this, const camio_descr_t* descr,
 }
 
 
-void camio_istream_netmap_close(camio_istream_t* this){
+static void camio_istream_netmap_close(camio_istream_t* this){
     printf("Closing Netmap\n");
     camio_istream_netmap_t* priv = this->priv;
     priv->is_closed = 1;
@@ -221,7 +221,7 @@ static int prepare_next(camio_istream_t* this){
     return 0 ;
 }
 
-int camio_istream_netmap_ready(camio_istream_t* this){
+static int camio_istream_netmap_ready(camio_istream_t* this){
     camio_istream_netmap_t* priv = this->priv;
     if(priv->packet_size || priv->is_closed){
         return 1;
@@ -232,7 +232,7 @@ int camio_istream_netmap_ready(camio_istream_t* this){
 
 
 
-int camio_istream_netmap_start_read(camio_istream_t* this, uint8_t** out){
+static int camio_istream_netmap_start_read(camio_istream_t* this, uint8_t** out){
     camio_istream_netmap_t* priv = this->priv;
     *out = NULL;
 
@@ -260,7 +260,7 @@ int camio_istream_netmap_start_read(camio_istream_t* this, uint8_t** out){
 }
 
 size_t count = 0; 
-int camio_istream_netmap_end_read(camio_istream_t* this,uint8_t* free_buff){
+static int camio_istream_netmap_end_read(camio_istream_t* this,uint8_t* free_buff){
     camio_istream_netmap_t* priv = this->priv;
 
     if(free_buff){
@@ -285,12 +285,12 @@ int camio_istream_netmap_end_read(camio_istream_t* this,uint8_t* free_buff){
 }
 
 
-int camio_istream_netmap_selector_ready(camio_selectable_t* stream){
+static int camio_istream_netmap_selector_ready(camio_selectable_t* stream){
     camio_istream_t* this = container_of(stream, camio_istream_t,selector);
     return this->ready(this);
 }
 
-void camio_istream_netmap_delete(camio_istream_t* this){
+static void camio_istream_netmap_delete(camio_istream_t* this){
     this->close(this);
     camio_istream_netmap_t* priv = this->priv;
     free(priv);
@@ -300,7 +300,7 @@ void camio_istream_netmap_delete(camio_istream_t* this){
  * Construction
  */
 
-camio_istream_t* camio_istream_netmap_construct(camio_istream_netmap_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_netmap_params_t* params, camio_perf_t* perf_mon){
+static camio_istream_t* camio_istream_netmap_construct(camio_istream_netmap_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_netmap_params_t* params, camio_perf_t* perf_mon){
     if(!priv){
         eprintf_exit("netmap stream supplied is null\n");
     }
