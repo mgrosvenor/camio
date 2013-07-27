@@ -49,6 +49,8 @@ static int camio_ostream_bring_open(camio_ostream_t* this, const camio_descr_t* 
         priv->slot_count = CAMIO_BRING_SLOT_COUNT_DEFAULT;
     }
 
+    //printf("Making bring ostream %s with %lu slots of size %lu\n", descr->query, priv->slot_count, priv->slot_size);
+
 
     //Make a local copy of the filename in case the descr pointer goes away (probable)
     size_t filename_len = strlen(descr->query);
@@ -65,36 +67,37 @@ static int camio_ostream_bring_open(camio_ostream_t* this, const camio_descr_t* 
         if( unlink(descr->query) < 0){
             eprintf_exit("Could remove stale bring file \"%s\". Error=%s\n", descr->query, strerror(errno));
         }
-
-    }
-    else{
-        bring_fd = open(descr->query, O_RDWR | O_CREAT | O_TRUNC , (mode_t)(0666));
-        if(unlikely(bring_fd < 0)){
-            eprintf_exit("Could not open file \"%s\". Error=%s\n", descr->query, strerror(errno));
-        }
-
-        //Resize the file
-        if(lseek(bring_fd, CAMIO_BRING_MEM_SIZE(priv->slot_count, priv->slot_size) -1, SEEK_SET) < 0){
-            eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
-        }
-
-        if(write(bring_fd, "", 1) < 0){
-            eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
-        }
-
-        bring = mmap( NULL, CAMIO_BRING_MEM_SIZE(priv->slot_count, priv->slot_size), PROT_READ | PROT_WRITE, MAP_SHARED, bring_fd, 0);
-        if(unlikely(bring == MAP_FAILED)){
-            eprintf_exit("Could not memory map bring file \"%s\". Error=%s\n", descr->query, strerror(errno));
-        }
-
-        //Initialize the bring with 0
-        memset((uint8_t*)bring, 0, CAMIO_BRING_MEM_SIZE(priv->slot_count, priv->slot_size));
     }
 
-    priv->bring_size = CAMIO_BRING_MEM_SIZE(priv->slot_count, priv->slot_size);
+
+    bring_fd = open(descr->query, O_RDWR | O_CREAT | O_TRUNC , (mode_t)(0666));
+    if(unlikely(bring_fd < 0)){
+        eprintf_exit("Could not open file \"%s\". Error=%s\n", descr->query, strerror(errno));
+    }
+
+    //Resize the file
+    if(lseek(bring_fd, CAMIO_BRING_MEM_SIZE -1, SEEK_SET) < 0){
+        eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
+    }
+
+    if(write(bring_fd, "", 1) < 0){
+        eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
+    }
+
+    bring = mmap( NULL, CAMIO_BRING_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, bring_fd, 0);
+    if(unlikely(bring == MAP_FAILED)){
+        eprintf_exit("Could not memory map bring file \"%s\". Error=%s\n", descr->query, strerror(errno));
+    }
+
+    //Initialize the bring with 0
+    memset((uint8_t*)bring, 0, CAMIO_BRING_MEM_SIZE);
+
+
+    priv->bring_size = CAMIO_BRING_MEM_SIZE;
     this->fd = bring_fd;
     priv->bring = bring;
     priv->curr = bring;
+    bring_ostream_created = 1; //Tell a waiting reader that everything is initilaised
     priv->is_closed = 0;
 
     return 0;
@@ -115,8 +118,15 @@ static uint8_t* camio_ostream_bring_start_write(camio_ostream_t* this, size_t le
     camio_ostream_bring_t* priv = this->priv;
     CHECK_LEN_OK(len);
 
-    if(!bring_connected){
-        return NULL;
+    printf("Start write connected=%lu\n", bring_istream_connected);
+    if(!bring_istream_connected){
+        printf("Waiting for connect\n");
+
+        while(!bring_istream_connected){
+            asm("PAUSE");
+        }
+
+        printf("Done waiting for connect\n");
     }
 
     while(1){
@@ -143,10 +153,6 @@ static int camio_ostream_bring_ready(camio_ostream_t* this){
 static uint8_t* camio_ostream_bring_end_write(camio_ostream_t* this, size_t len){
     camio_ostream_bring_t* priv = this->priv;
     CHECK_LEN_OK(len);
-
-    if(!bring_connected){
-        return NULL;
-    }
 
     camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_OSTREAM_BRING, CAMIO_PERF_COND_WRITE);
 
@@ -189,6 +195,19 @@ static int camio_ostream_bring_assign_write(camio_ostream_t* this, uint8_t* buff
         eprintf_exit("Assigned buffer is null.");
     }
 
+
+
+    if(unlikely(!bring_istream_connected )){
+        //printf("Waiting for connect on  %s\n", priv->filename);
+
+        while(!bring_istream_connected){
+            asm("PAUSE");
+        }
+
+        //printf("Done waiting for connect\n");
+    }
+
+
     while(1){
         register const uint64_t curr_sync_count = *((volatile uint64_t*)(priv->curr + priv->slot_size - sizeof(uint64_t)));
         if(curr_sync_count == 0x00ULL){ //The istream will set this to zero when it's done
@@ -196,12 +215,7 @@ static int camio_ostream_bring_assign_write(camio_ostream_t* this, uint8_t* buff
         }
         asm("pause"); //relax the CPU while we're spinning
     }
-
     CHECK_LEN_OK(len);
-
-    if(!bring_connected){
-        return -1;
-    }
 
     priv->assigned_buffer    = buffer;
     priv->assigned_buffer_sz = len;

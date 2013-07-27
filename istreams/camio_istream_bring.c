@@ -126,11 +126,12 @@ static int camio_istream_bring_open(camio_istream_t* this, const camio_descr_t* 
         priv->slot_count = CAMIO_BRING_SLOT_COUNT_DEFAULT;
     }
 
+    //printf("Making bring istream %s with %lu slots of size %lu\n", descr->query, priv->slot_count, priv->slot_size);
 
     //Wait until there is a bring file to open.
     while( (bring_fd = open(descr->query, O_RDWR)) < 0 ){ usleep(1000); }
 
-    bring = mmap( NULL, CAMIO_BRING_MEM_SIZE(priv->slot_count,priv->slot_size), PROT_READ | PROT_WRITE, MAP_SHARED, bring_fd, 0);
+    bring = mmap( NULL, CAMIO_BRING_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, bring_fd, 0);
     if(unlikely(bring == MAP_FAILED)){
         eprintf_exit( "Could not memory map bring file \"%s\". Error=%s\n", descr->query, strerror(errno));
     }
@@ -147,7 +148,14 @@ static int camio_istream_bring_open(camio_istream_t* this, const camio_descr_t* 
     priv->curr = bring;
     priv->is_closed = 0;
 
-    bring_connected = 1;
+    //Wait for the ostream to do any init work it must do
+    while(!bring_ostream_created){
+        asm("PAUSE");
+    }
+
+    //Tell the ostream it can send now
+    bring_istream_connected = 1;
+    //printf("Bring connected =%lu (%s) %lu\n", bring_istream_connected, descr->query, (&bring_istream_connected - (volatile uint64_t*)priv->bring));
 
     return 0;
 }
