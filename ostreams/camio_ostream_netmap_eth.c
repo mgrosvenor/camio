@@ -140,8 +140,6 @@ camio_ostream_t* camio_ostream_netmap_eth_construct(camio_ostream_netmap_eth_t* 
     priv->base_buff_size        = 0;
     priv->params                = params;
 
-
-
     //Populate the function members
     priv->ostream.priv              = priv; //Lets us access private members from public functions
     priv->ostream.open              = camio_ostream_netmap_eth_open;

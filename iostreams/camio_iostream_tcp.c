@@ -46,17 +46,17 @@ int camio_iostream_tcp_open(camio_iostream_t* this, const camio_descr_t* descr, 
 
 
     //Allocate the memory
-    priv->rbuffer = malloc(getpagesize() * 1024); //Allocate 1024 page for the buffer
+    priv->rbuffer = malloc(getpagesize() * 1024 * 8); //Allocate 1024 * 8 page for the buffer
     if(!priv->rbuffer){
         eprintf_exit( "Failed to allocate transmit buffer\n");
     }
-    priv->rbuffer_size = getpagesize() * 1024;
+    priv->rbuffer_size = getpagesize() * 1024 * 8;
 
-    priv->wbuffer = malloc(getpagesize() * 1024); //Allocate 1024 page for the buffer
+    priv->wbuffer = malloc(getpagesize() * 1024 * 8); //Allocate 1024 page for the buffer
     if(!priv->wbuffer){
         eprintf_exit( "Failed to allocate receive buffer\n");
     }
-    priv->wbuffer_size = getpagesize() * 1024;
+    priv->wbuffer_size = getpagesize() * 1024 * 8;
 
 
 
