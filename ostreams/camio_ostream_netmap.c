@@ -158,7 +158,7 @@ int camio_ostream_netmap_open(camio_ostream_t* this, const camio_descr_t* descr,
 
     //Open the netmap device
     netmap_fd = open("/dev/netmap", O_RDWR);
-    printf("Opening %s\n", "/dev/netmap");
+    //printf("Opening %s\n", "/dev/netmap");
     if(unlikely(netmap_fd < 0)){
         eprintf_exit( "Could not open file \"%s\". Error=%s\n", "/dev/netmap", strerror(errno));
     }
@@ -173,7 +173,7 @@ int camio_ostream_netmap_open(camio_ostream_t* this, const camio_descr_t* descr,
         eprintf_exit( "Could not get info on netmap interface %s\n", iface);
     }
 
-    printf("IF = %s\n", req.nr_name);
+    //printf("IF = %s\n", req.nr_name);
 
     priv->mem_size = req.nr_memsize;
 
@@ -181,19 +181,19 @@ int camio_ostream_netmap_open(camio_ostream_t* this, const camio_descr_t* descr,
         eprintf_exit( "Could not register netmap interface %s\n", iface);
     }
 
-    printf("Memsize  = %u\n"
-            "Ringid   = %u\n"
-            "Offset   = %u\n"
-            "tx rings = %u\n"
-            "tx slots = %u\n"
-			"pbuffs   = %u\n",
-            req.nr_memsize / 1024 / 1204,
-            req.nr_ringid,
-            req.nr_offset,
-            req.nr_tx_rings,
-            req.nr_tx_slots,
-            req.nr_tx_rings * req.nr_tx_slots);
-
+//    printf("Memsize  = %u\n"
+//            "Ringid   = %u\n"
+//            "Offset   = %u\n"
+//            "tx rings = %u\n"
+//            "tx slots = %u\n"
+//			"pbuffs   = %u\n",
+//            req.nr_memsize / 1024 / 1204,
+//            req.nr_ringid,
+//            req.nr_offset,
+//            req.nr_tx_rings,
+//            req.nr_tx_slots,
+//            req.nr_tx_rings * req.nr_tx_slots);
+//
 
     if(priv->params){
         priv->burst_size = priv->params->burst_size;

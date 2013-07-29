@@ -104,7 +104,7 @@ static int camio_istream_netmap_open(camio_istream_t* this, const camio_descr_t*
 
     //Open the netmap device
     netmap_fd = open("/dev/netmap", O_RDWR);
-    printf("Opening %s\n", "/dev/netmap");
+    //printf("Opening %s\n", "/dev/netmap");
     if(unlikely(netmap_fd < 0)){
         eprintf_exit( "Could not open file \"%s\". Error=%s\n", "/dev/netmap", strerror(errno));
     }
@@ -124,23 +124,23 @@ static int camio_istream_netmap_open(camio_istream_t* this, const camio_descr_t*
 		eprintf_exit( "Could not register netmap interface %s\n", descr->query);
 	}
 
-    printf("Memsize  = %u\n"
-           "Ringid   = %u\n"
-           "Nr Offset   = %u\n"
-           "rx rings = %u\n"
-           "rx slots = %u\n",
-           req.nr_memsize / 1024 / 1204,
-           req.nr_ringid,
-           req.nr_offset,
-           req.nr_rx_rings,
-           req.nr_rx_slots);
+//    printf("Memsize  = %u\n"
+//           "Ringid   = %u\n"
+//           "Nr Offset   = %u\n"
+//           "rx rings = %u\n"
+//           "rx slots = %u\n",
+//           req.nr_memsize / 1024 / 1204,
+//           req.nr_ringid,
+//           req.nr_offset,
+//           req.nr_rx_rings,
+//           req.nr_rx_slots);
 
 
 
 	if(priv->params && priv->params->nm_mem){
 	   priv->nm_mem   = priv->params->nm_mem;
 	   priv->mem_size = priv->params->nm_mem_size;
-       printf("Closing FD=%i and assigning fd=%i\n", netmap_fd, priv->params->fd);
+       //printf("Closing FD=%i and assigning fd=%i\n", netmap_fd, priv->params->fd);
        close(netmap_fd);
        netmap_fd      = priv->params->fd;       
 	}
@@ -179,7 +179,7 @@ static int camio_istream_netmap_open(camio_istream_t* this, const camio_descr_t*
 
 
 static void camio_istream_netmap_close(camio_istream_t* this){
-    printf("Closing Netmap\n");
+   // printf("Closing Netmap\n");
     camio_istream_netmap_t* priv = this->priv;
     priv->is_closed = 1;
 //    if(priv->nm_mem){
