@@ -56,7 +56,7 @@ static int camio_istream_netmap_eth_start_read(camio_istream_t* this, uint8_t** 
 
     uint8_t* buff;
     const uint64_t len = priv->netmap_base->start_read(priv->netmap_base, &buff);
-    printf("Read %lu bytes into %p\n", len, buff);
+    //printf("Read %lu bytes into %p\n", len, buff);
 
     if(len < sizeof(ether_head_t)){
         wprintf("Packet of size (%lu) is too small to be an ethernet frame (%lu)!\n", len, sizeof(ether_head_t));
