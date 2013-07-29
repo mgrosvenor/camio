@@ -78,7 +78,7 @@ static uint8_t* camio_ostream_netmap_eth_end_write(camio_ostream_t* this, size_t
         wprintf("Truncating write. Write size (%lu) is greater than buffer size (%lu)\n", len, priv->base_buff_size);
     }
 
-    priv->netmap_base->end_write(priv->netmap_base, MIN(len, priv->base_buff_size));
+    priv->netmap_base->end_write(priv->netmap_base, MIN(len + sizeof(ether_head_t), priv->base_buff_size));
     return NULL;
 }
 
