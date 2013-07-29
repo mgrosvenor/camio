@@ -11,7 +11,7 @@
 #define CAMIO_BRING_SLOT_COUNT_DEFAULT (1024)
 #define CAMIO_BRING_SLOT_SIZE_DEFAULT (4 * 1024)  //4K
 #define CAMIO_BRING_SLOT_AVAIL  (priv->slot_size - 2*sizeof(uint64_t))
-#define CAMIO_BRING_MEM_SIZE    (priv->slot_size *  priv->slot_size + 2*sizeof(uint64_t))
+#define CAMIO_BRING_MEM_SIZE    (priv->slot_size * priv->slot_count + 2*sizeof(uint64_t))
 
 
 #define CHECK_LEN_OK(len) \

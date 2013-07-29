@@ -56,35 +56,37 @@ static int camio_ostream_ring_open(camio_ostream_t* this, const camio_descr_t* d
         }
 
     }
-    else{
-        ring_fd = open(descr->query, O_RDWR | O_CREAT | O_TRUNC , (mode_t)(0666));
-        if(unlikely(ring_fd < 0)){
-            eprintf_exit("Could not open file \"%s\". Error=%s\n", descr->query, strerror(errno));
-        }
 
-        //Resize the file
-        if(lseek(ring_fd, CAMIO_RING_MEM_SIZE -1, SEEK_SET) < 0){
-            eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
-        }
-
-        if(write(ring_fd, "", 1) < 0){
-            eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
-        }
-
-        ring = mmap( NULL, CAMIO_RING_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, ring_fd, 0);
-        if(unlikely(ring == MAP_FAILED)){
-            eprintf_exit("Could not memory map ring file \"%s\". Error=%s\n", descr->query, strerror(errno));
-        }
-
-        //Initialize the ring with 0
-        memset((uint8_t*)ring, 0, CAMIO_RING_MEM_SIZE);
+    ring_fd = open(descr->query, O_RDWR | O_CREAT | O_TRUNC , (mode_t)(0666));
+    if(unlikely(ring_fd < 0)){
+        eprintf_exit("Could not open file \"%s\". Error=%s\n", descr->query, strerror(errno));
     }
+
+    //Resize the file
+    if(lseek(ring_fd, CAMIO_RING_MEM_SIZE -1, SEEK_SET) < 0){
+        eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
+    }
+
+    if(write(ring_fd, "", 1) < 0){
+        eprintf_exit( "Could not resize file for shared region \"%s\". Error=%s\n", descr->query, strerror(errno));
+    }
+
+    ring = mmap( NULL, CAMIO_RING_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, ring_fd, 0);
+    if(unlikely(ring == MAP_FAILED)){
+        eprintf_exit("Could not memory map ring file \"%s\". Error=%s\n", descr->query, strerror(errno));
+    }
+
+    //Initialize the ring with 0
+    memset((uint8_t*)ring, 0, CAMIO_RING_MEM_SIZE);
 
     priv->ring_size = CAMIO_RING_MEM_SIZE;
     this->fd = ring_fd;
     priv->ring = ring;
     priv->curr = ring;
+
+    ring_ostream_created = 1; //Tell any istreams that are listening that we are all initiliased.
     priv->is_closed = 0;
+
 
     return 0;
 }
@@ -104,8 +106,11 @@ static uint8_t* camio_ostream_ring_start_write(camio_ostream_t* this, size_t len
     camio_ostream_ring_t* priv = this->priv;
     CHECK_LEN_OK(len);
 
-    if(!ring_connected){
-        return NULL;
+    if(unlikely(!ring_istream_connected)){
+        //printf("Waiting for istream to connect...\n");
+        while(!ring_istream_connected){
+            asm("PAUSE"); //Wait for an istream to connect before you send anything
+        }
     }
 
     return (uint8_t*)priv->curr;
@@ -124,11 +129,6 @@ static int camio_ostream_ring_ready(camio_ostream_t* this){
 static uint8_t* camio_ostream_ring_end_write(camio_ostream_t* this, size_t len){
     camio_ostream_ring_t* priv = this->priv;
     CHECK_LEN_OK(len);
-
-    if(!ring_connected){
-        //printf("CAMIO_RING: Unconnected ring\n");
-        return NULL;
-    }
 
     camio_perf_event_stop(priv->perf_mon, CAMIO_PERF_EVENT_OSTREAM_RING, CAMIO_PERF_COND_WRITE);
 
@@ -174,8 +174,12 @@ static int camio_ostream_ring_assign_write(camio_ostream_t* this, uint8_t* buffe
 
     CHECK_LEN_OK(len);
 
-    if(!ring_connected){
-        return -1;
+
+    if(unlikely(!ring_istream_connected)){
+        //printf("Waiting for istream to connect...\n");
+        while(!ring_istream_connected){
+            asm("PAUSE"); //Wait for an istream to connect before you send anything
+        }
     }
 
     priv->assigned_buffer    = buffer;

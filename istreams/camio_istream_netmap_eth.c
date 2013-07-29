@@ -56,6 +56,7 @@ static int camio_istream_netmap_eth_start_read(camio_istream_t* this, uint8_t** 
 
     uint8_t* buff;
     const uint64_t len = priv->netmap_base->start_read(priv->netmap_base, &buff);
+    printf("Read %lu bytes into %p\n", len, buff);
 
     if(len < sizeof(ether_head_t)){
         wprintf("Packet of size (%lu) is too small to be an ethernet frame (%lu)!\n", len, sizeof(ether_head_t));
@@ -94,7 +95,7 @@ static void camio_istream_netmap_eth_delete(camio_istream_t* this){
  * Construction
  */
 
-static camio_istream_t* camio_istream_netmap_eth_construct(camio_istream_netmap_eth_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_netmap_eth_params_t* params, camio_perf_t* perf_mon){
+static camio_istream_t* camio_istream_netmap_eth_construct(camio_istream_netmap_eth_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_istream_netmap_params_t* params, camio_perf_t* perf_mon){
     if(!priv){
         eprintf_exit("netmap_eth stream supplied is null\n");
     }
@@ -127,7 +128,7 @@ static camio_istream_t* camio_istream_netmap_eth_construct(camio_istream_netmap_
 
 }
 
-camio_istream_t* camio_istream_netmap_eth_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_netmap_eth_params_t* params, camio_perf_t* perf_mon){
+camio_istream_t* camio_istream_netmap_eth_new( const camio_descr_t* descr, camio_clock_t* clock, camio_istream_netmap_params_t* params, camio_perf_t* perf_mon){
     camio_istream_netmap_eth_t* priv = malloc(sizeof(camio_istream_netmap_eth_t));
     if(!priv){
         eprintf_exit("No memory available for netmap_eth istream creation\n");

@@ -11,7 +11,7 @@
 #define CAMIO_RING_SLOT_COUNT (1024)
 #define CAMIO_RING_SLOT_SIZE (4 * 1024)  //4K
 #define CAMIO_RING_SLOT_AVAIL (CAMIO_RING_SLOT_SIZE - sizeof(uint64_t) * 2)
-#define CAMIO_RING_MEM_SIZE ( CAMIO_RING_SLOT_COUNT * CAMIO_RING_SLOT_SIZE + sizeof(uint64_t))
+#define CAMIO_RING_MEM_SIZE ( CAMIO_RING_SLOT_COUNT * CAMIO_RING_SLOT_SIZE + 2* sizeof(uint64_t))
 
 
 #define CHECK_LEN_OK(len) \
@@ -20,6 +20,7 @@
     }
 
 
-#define ring_connected (*(volatile uint64_t*)(priv->ring + CAMIO_RING_SLOT_COUNT * CAMIO_RING_SLOT_SIZE))
+#define ring_istream_connected (*(volatile uint64_t*)(priv->ring + CAMIO_RING_SLOT_COUNT * CAMIO_RING_SLOT_SIZE))
+#define ring_ostream_created (*(volatile uint64_t*)(priv->ring + CAMIO_RING_SLOT_COUNT * CAMIO_RING_SLOT_SIZE + sizeof(uint64_t)))
 
 #endif /* CAMIO_RING_H_ */

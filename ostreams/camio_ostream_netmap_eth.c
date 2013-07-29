@@ -17,6 +17,7 @@
 #include "camio_ostream_netmap.h"
 
 #include "camio_ostream_netmap_eth.h"
+#include "camio_ostream_netmap.h"
 
 typedef struct {
     uint8_t dst_mac[6];
@@ -28,7 +29,7 @@ typedef struct {
 static int camio_ostream_netmap_eth_open(camio_ostream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
     camio_ostream_netmap_eth_t* priv = this->priv;
 
-    priv->netmap_base = camio_istream_netmap_new(descr,NULL,priv->params,perf_mon);
+    priv->netmap_base = camio_ostream_netmap_new(descr,NULL,priv->params,perf_mon);
     priv->is_closed = 0;
     return 0;
 }
@@ -77,7 +78,8 @@ static uint8_t* camio_ostream_netmap_eth_end_write(camio_ostream_t* this, size_t
         wprintf("Truncating write. Write size (%lu) is greater than buffer size (%lu)\n", len, priv->base_buff_size);
     }
 
-    int result = priv->netmap_base->end_write(priv->netmap_base, MIN(len, priv->base_buff_size));
+    priv->netmap_base->end_write(priv->netmap_base, MIN(len, priv->base_buff_size));
+    return NULL;
 }
 
 
@@ -128,7 +130,7 @@ static int camio_ostream_netmap_eth_assign_write(camio_ostream_t* this, uint8_t*
  * Construction heavy lifting
  */
 
-camio_ostream_t* camio_ostream_netmap_eth_construct(camio_ostream_netmap_eth_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_netmap_eth_params_t* params, camio_perf_t* perf_mon){
+camio_ostream_t* camio_ostream_netmap_eth_construct(camio_ostream_netmap_eth_t* priv, const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_netmap_params_t* params, camio_perf_t* perf_mon){
     if(!priv){
         eprintf_exit("netmap_eth stream supplied is null\n");
     }
@@ -162,7 +164,7 @@ camio_ostream_t* camio_ostream_netmap_eth_construct(camio_ostream_netmap_eth_t* 
 
 }
 
-camio_ostream_t* camio_ostream_netmap_eth_new( const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_netmap_eth_params_t* params, camio_perf_t* perf_mon){
+camio_ostream_t* camio_ostream_netmap_eth_new( const camio_descr_t* descr, camio_clock_t* clock, camio_ostream_netmap_params_t* params, camio_perf_t* perf_mon){
     camio_ostream_netmap_eth_t* priv = malloc(sizeof(camio_ostream_netmap_eth_t));
     if(!priv){
         eprintf_exit("No memory available for ostream netmap_eth creation\n");

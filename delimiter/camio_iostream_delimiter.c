@@ -78,7 +78,7 @@ static int prepare_next(camio_iostream_delimiter_t* priv){
 
         //----- BASE START READ
         priv->read_buffer_size = priv->base->start_read(priv->base, &priv->read_buffer);
-        //printf("Read another %lubytes\n", priv->read_buffer_size);
+        printf("Read another %lubytes\n", priv->read_buffer_size);
 
         //There is no more data to read, time to give up
         if(priv->read_buffer_size == 0){
@@ -95,8 +95,8 @@ static int prepare_next(camio_iostream_delimiter_t* priv){
         //TODO XXX, can potentially avoid this if the delimiter says that data in read_buffer is a complete packet but have to deal
         //(potentially) with a partial fragment(s) left over in the buffer.
 	        
-	//printf("Adding %lu bytes at %p (offset=%lu)\n", priv->read_buffer_size, priv->working_buffer + priv->working_buffer_contents_size, priv->working_buffer_contents_size);
-	memcpy(priv->working_buffer + priv->working_buffer_contents_size, priv->read_buffer, priv->read_buffer_size);
+	    printf("Adding %lu bytes at %p (offset=%lu)\n", priv->read_buffer_size, priv->working_buffer + priv->working_buffer_contents_size, priv->working_buffer_contents_size);
+	    memcpy(priv->working_buffer + priv->working_buffer_contents_size, priv->read_buffer, priv->read_buffer_size);
         priv->working_buffer_contents_size += priv->read_buffer_size;
 
         priv->base->end_read(priv->base, NULL);

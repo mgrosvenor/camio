@@ -51,5 +51,11 @@ camio_iostream_t* camio_iostream_wrapper_new(
         params, camio_perf_t* perf_mon);
 
 
+camio_iostream_t* camio_iostream_wrapper_new_e(
+        camio_istream_t* istream,
+        camio_ostream_t* ostream,
+        camio_iostream_wrapper_params_t*
+        params, camio_perf_t* perf_mon);
+
 #endif /* CAMIO_IOSTREAM_WRAPPER_H_ */
 

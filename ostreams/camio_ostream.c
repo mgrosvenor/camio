@@ -19,6 +19,7 @@
 #include "camio_ostream_bring.h"
 #include "camio_ostream_blob.h"
 #include "camio_ostream_netmap.h"
+#include "camio_ostream_netmap_eth.h"
 
 
 camio_ostream_t* camio_ostream_new( char* description, camio_clock_t* clock, void* parameters, camio_perf_t* perf_mon){
@@ -55,6 +56,9 @@ camio_ostream_t* camio_ostream_new( char* description, camio_clock_t* clock, voi
     }
     else if(strcmp(descr.protocol,"nmap") == 0 ){
             result = camio_ostream_netmap_new(&descr,clock, parameters, perf_mon);
+    }
+    else if(strcmp(descr.protocol,"nme") == 0 ){
+            result = camio_ostream_netmap_eth_new(&descr,clock, parameters, perf_mon);
     }
     else{
         eprintf_exit("Could not create ostream from description \"%s\" \n", description);

@@ -184,3 +184,96 @@ camio_iostream_t* camio_iostream_wrapper_new(
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int camio_iostream_wrapper_open_e(camio_iostream_t* this, const camio_descr_t* descr, camio_perf_t* perf_mon ){
+    camio_iostream_wrapper_t* priv = this->priv;
+
+    if(unlikely(perf_mon == NULL)){
+        eprintf_exit("No performance monitor supplied\n");
+    }
+    priv->perf_mon = perf_mon;
+
+    return 0;
+}
+
+
+
+
+camio_iostream_t* camio_iostream_wrapper_construct_e(
+        camio_iostream_wrapper_t* priv,
+        camio_istream_t* istream,
+        camio_ostream_t* ostream,
+        camio_iostream_wrapper_params_t* params,
+        camio_perf_t* perf_mon){
+
+    if(!priv){
+        eprintf_exit("wrapper stream supplied is null\n");
+    }
+    //Initialize the local variables
+    priv->base_istream      = istream;
+    priv->base_ostream      = ostream;
+    priv->params            = params;
+
+
+    //Populate the function members
+    priv->iostream.priv             = priv; //Lets us access private members
+    priv->iostream.open             = camio_iostream_wrapper_open_e;
+    priv->iostream.close            = camio_iostream_wrapper_close;
+    priv->iostream.delete           = camio_iostream_wrapper_delete;
+    priv->iostream.start_read       = camio_iostream_wrapper_start_read;
+    priv->iostream.end_read         = camio_iostream_wrapper_end_read;
+    priv->iostream.rready           = camio_iostream_wrapper_rready;
+    priv->iostream.selector.ready   = camio_iostream_wrapper_selector_ready;
+
+    priv->iostream.start_write      = camio_iostream_wrapper_start_write;
+    priv->iostream.end_write        = camio_iostream_wrapper_end_write;
+    priv->iostream.can_assign_write = camio_iostream_wrapper_can_assign_write;
+    priv->iostream.assign_write     = camio_iostream_wrapper_assign_write;
+    priv->iostream.wready           = camio_iostream_wrapper_wready;
+
+    priv->iostream.selector.fd      = -1;
+
+    //Call open, because its the obvious thing to do now...
+    priv->iostream.open(&priv->iostream, NULL, perf_mon);
+
+    //Return the generic istream interface for the outside world to use
+    return &priv->iostream;
+
+}
+
+camio_iostream_t* camio_iostream_wrapper_new_e(
+        camio_istream_t* istream,
+        camio_ostream_t* ostream,
+        camio_iostream_wrapper_params_t*
+        params, camio_perf_t* perf_mon){
+
+    camio_iostream_wrapper_t* priv = malloc(sizeof(camio_iostream_wrapper_t));
+    if(!priv){
+        eprintf_exit("No memory available for wrapper iostream wrapper creation\n");
+    }
+    return camio_iostream_wrapper_construct_e(priv, istream, ostream, params, perf_mon);
+}
+
+
+
+
+
+
+
+

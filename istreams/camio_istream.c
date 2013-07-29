@@ -19,6 +19,7 @@
 #include "camio_istream_periodic_timeout_fast.h"
 #include "camio_istream_blob.h"
 #include "camio_istream_netmap.h"
+#include "camio_istream_netmap_eth.h"
 #include "camio_istream_fio.h"
 #include "camio_istream_bring.h"
 
@@ -79,6 +80,10 @@ camio_istream_t* camio_istream_new(const char* description, camio_clock_t* clock
     else if(strcmp(descr.protocol,"nmap") == 0 ){
         result = camio_istream_netmap_new(&descr,clock,parameters, perf_mon);
     }
+    else if(strcmp(descr.protocol,"nme") == 0 ){
+        result = camio_istream_netmap_eth_new(&descr,clock,parameters, perf_mon);
+    }
+
 //#endif /*CAMIO_ISTREAM_BUILD_WITH_DAG_*/
     else{
         eprintf_exit("Could not create istream from description \"%s\" \n", description);

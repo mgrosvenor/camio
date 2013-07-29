@@ -21,7 +21,7 @@ typedef struct {
     int is_closed;
     camio_istream_t* netmap_base;
     uint8_t* data_head;
-    uint8_t* data_size;
+    uint64_t data_size;
 
     camio_istream_t istream;
     camio_istream_netmap_params_t* params;  //Parameters passed in from the outside
@@ -36,7 +36,7 @@ typedef struct {
  *                  PUBLIC DEFS
  ********************************************************************/
 
-camio_istream_t* camio_istream_netmap_eth_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_netmap_eth_params_t* params, camio_perf_t* perf_mon);
+camio_istream_t* camio_istream_netmap_eth_new( const camio_descr_t* opts, camio_clock_t* clock, camio_istream_netmap_params_t* params, camio_perf_t* perf_mon);
 
 
 #endif /* CAMIO_ISTREAM_NETMAP_ETH_ETH_H_ */
