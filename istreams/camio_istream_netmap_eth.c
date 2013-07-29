@@ -65,6 +65,9 @@ static int camio_istream_netmap_eth_start_read(camio_istream_t* this, uint8_t** 
 
     priv->data_head = buff + sizeof(ether_head_t);
     priv->data_size = len - sizeof(ether_head_t);
+
+    *out = priv->data_head;
+
     return priv->data_size;
 
 }
