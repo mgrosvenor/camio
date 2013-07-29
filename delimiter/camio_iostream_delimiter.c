@@ -78,7 +78,7 @@ static int prepare_next(camio_iostream_delimiter_t* priv){
 
         //----- BASE START READ
         priv->read_buffer_size = priv->base->start_read(priv->base, &priv->read_buffer);
-        printf("Read another %lubytes\n", priv->read_buffer_size);
+        printf("Read another %lubytes from %p\n", priv->read_buffer_size, priv->read_buffer);
 
         //There is no more data to read, time to give up
         if(priv->read_buffer_size == 0){
