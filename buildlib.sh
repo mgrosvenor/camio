@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 
 ./makeinclude > .tmp.makeincludeout
 rm -rf .tmp.makeincludeout

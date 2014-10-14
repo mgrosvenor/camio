@@ -158,7 +158,7 @@ static int camio_iostream_delimiter_start_read(camio_iostream_t* this, uint8_t**
 // call to prepare_next(). prepar_next() may have succeeded for one of two reasons, 1) either new data was
 // read and the delimiter was successful, or, 2) we have optimistically found another delimited result in
 // a previous call to end_read(). In the first case, priv->working_buffer is at least equal to the size of
-// priv->result_buffer_size, in the second case, priv->working buffer size may be samller than
+// priv->result_buffer_size, in the second case, priv->working buffer size may be smaller than
 // priv->result_buffer_size. We must handle both of these cases here.
 
 static int camio_iostream_delimiter_end_read(camio_iostream_t* this, uint8_t* free_buff){
@@ -168,13 +168,15 @@ static int camio_iostream_delimiter_end_read(camio_iostream_t* this, uint8_t* fr
 
     //Handle case 1)
     //New data was read and the delimiter was successful
-    if(priv->result_buffer_size <= priv->working_buffer_contents_size){
+    if(priv->working_buffer_contents_size >= priv->result_buffer_size ){
 
         //This is how much is now left over
         priv->working_buffer_contents_size -= priv->result_buffer_size;
 
         //If there is nothing left over, give up and bug out
-        if(!priv->working_buffer_size){
+        if(!priv->working_buffer_contents_size){
+            priv->result_buffer_size = 0;
+            priv->result_buffer = NULL;
             return 0;
         }
 
